@@ -30,6 +30,8 @@ from src.xauusd_config import (
     ELEMENT_ORDER,
     HOME_XAU_DEG,
     mod_arcanum,
+    price_to_deg,
+    zodiac_from_deg,
 )
 
 assert (DEG1_GOLD, DEG2_XAUUSD, HOME_XAU_DEG, AWAY_USD_DEG) == (107, 147, 77, 70)
@@ -291,8 +293,8 @@ def evaluate_xauusd_gold_cba(
     ):
         polarity_flipped = True
         polarity_flip_code = "P2A_GOLD_WATER_POLE_CLASH"
-        polarity_flip_badge_fa = "🔄 چرخش قطبیت (Polarity Flip)"
-        polarity_flip_reason_fa = "🔄 قطبیت معکوس در استخر ضعیف اصلاح شد — هم‌نوایی با قطب ذاتی آب طلا (F1=107°+f → WATER)"
+        polarity_flip_badge_fa = "🔄 چرخش قطبیت هوشمند"
+        polarity_flip_reason_fa = "🔄 چرخش قطبیت هوشمند: هم‌نوایی استخر ضعیف با قطب ذاتی آب طلا (F1=107°+f → WATER)"
         raw_dir = "XAU"
 
     sgn = 1.0 if raw_dir == "XAU" else -1.0
@@ -376,6 +378,75 @@ def evaluate_xauusd_gold_cba(
     ab_boost_pct = 4.5 * math.tanh(max(-0.5, comp_ab) * 0.65)
     tier_edge_pct = 4.0 if is_c else (2.0 if is_b else (0.5 if is_a else -4.0))
     win_prob_pct = round(float(np.clip(base_prob_pct + ab_boost_pct + tier_edge_pct, 48.0, 89.5)), 1)
+
+    entry_open = float(eng_b["entry_open"])
+    atr14 = float(rec["atr14"])
+    all3_agree = bool(eng_c.get("all3_agree", False))
+
+    # Post-Gate Smart Polarity Inversion Layer (`v5.1.0` — 0 trades dropped, 100% tier count preservation):
+    # Protects ultra-high `all3Agree + winProbPct >= 88.5%` locks while flipping Train-validated inversion traps.
+    if is_a and not (all3_agree and win_prob_pct >= 88.5):
+        fh_val = int(eng_a["d_ctx"]["F3_HOME"])
+        fa_val = int(eng_a["d_ctx"]["F3_AWAY"])
+        fh_elem = ELEMENT_ORDER[ARC_ELEMENT_IDX[mod_arcanum(fh_val)]]
+        fa_elem = ELEMENT_ORDER[ARC_ELEMENT_IDX[mod_arcanum(fa_val)]]
+        open_deg = price_to_deg(entry_open, "round")
+        _, open_elem, _ = zodiac_from_deg(open_deg)
+
+        net_usd = float(eng_c.get("net_dollar_sum", 0.0))
+        avg_up_usd = float(eng_c.get("avg_up_usd", 0.0))
+        avg_dn_usd = float(eng_c.get("avg_dn_usd", 0.0))
+
+        # P1: Same-Pole FH == FA Thursday SHORT Squeeze
+        cond_p1 = (
+            str(rec.get("weekday")) == "Thursday"
+            and (fh_elem == fa_elem)
+            and (raw_dir == "USD")
+            and (win_prob_pct < 88.5)
+        )
+        # P2: NEUTRAL Regime LONG Exhaustion on Hot FIRE Entry Degrees
+        cond_p2 = (
+            (macro_regime == "NEUTRAL")
+            and (raw_dir == "XAU")
+            and (open_elem == "FIRE")
+            and (not all3_agree)
+            and (win_prob_pct < 89.0)
+            and (z_a < 0.0 and net_usd <= 15.0)
+        )
+        # P3: Severe Twin Dollar-Sum vs Count Inversion (with 8v8 Roster confirmation)
+        if not all3_agree:
+            if raw_dir == "XAU":
+                cond_p3 = (net_usd < 0.0) and (avg_dn_usd >= 1.75 * max(0.01, avg_up_usd)) and (z_b < 0.0)
+            else:
+                cond_p3 = (net_usd > 0.0) and (avg_up_usd >= 1.75 * max(0.01, avg_dn_usd)) and (z_b > 0.0)
+        else:
+            cond_p3 = False
+
+        if cond_p1:
+            raw_dir = "XAU"
+            polarity_flipped = True
+            polarity_flip_code = "P1_THU_SAME_POLE_SWEEP"
+            polarity_flip_badge_fa = "🔄 چرخش قطبیت هوشمند"
+            polarity_flip_reason_fa = (
+                f"🔄 چرخش قطبیت هوشمند (P1): هم‌قطبی پنج‌شنبه (FH=FA={fh_elem}) — اصلاح فروش به خرید طلا"
+            )
+        elif cond_p2:
+            raw_dir = "USD"
+            polarity_flipped = True
+            polarity_flip_code = "P2_NEUTRAL_FIRE_EXHAUSTION"
+            polarity_flip_badge_fa = "🔄 چرخش قطبیت هوشمند"
+            polarity_flip_reason_fa = (
+                "🔄 چرخش قطبیت هوشمند (P2): اشباع خرید در درجه آتشین بازگشایی (Open=FIRE) در رژیم خنثی"
+            )
+        elif cond_p3:
+            raw_dir = "USD" if raw_dir == "XAU" else "XAU"
+            polarity_flipped = True
+            polarity_flip_code = "P3_TWIN_DOLLAR_SUM_INVERSION"
+            polarity_flip_badge_fa = "🔄 چرخش قطبیت هوشمند"
+            polarity_flip_reason_fa = (
+                f"🔄 چرخش قطبیت هوشمند (P3): برتری سنگین برآیند دلاری همزادها ({net_usd:+.1f}$) و راستر ۸×۸ بر شمارش خام"
+            )
+
     if polarity_flipped and win_prob_pct >= 85.0:
         win_prob_pct = 84.5
 
@@ -385,8 +456,6 @@ def evaluate_xauusd_gold_cba(
     tier_badge = "👑 Tier C" if is_c else ("⭐ Tier B" if is_b else ("🟢 Tier A" if is_a else "🛡️ HOLD/VETO"))
     kelly_mult = 1.20 if is_c else (1.00 if is_b else (0.80 if is_a else 0.0))
 
-    entry_open = float(eng_b["entry_open"])
-    atr14 = float(rec["atr14"])
     final_dir = pick if pick else raw_dir
     q25_a, q50_a, q75_a = eng_c["up_tp_atrs"] if final_dir == "XAU" else eng_c["dn_tp_atrs"]
     lvls = compute_adaptive_causal_levels(

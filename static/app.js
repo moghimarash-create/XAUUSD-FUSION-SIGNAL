@@ -249,8 +249,7 @@
     if (flipEl) {
       if (card.polarityFlipped) {
         flipEl.classList.remove("hidden");
-        flipEl.textContent =
-          card.polarityFlipReasonFa || "🔄 قطبیت معکوس اصلاح شد — چرخش قطبیت (Polarity Flip)";
+        flipEl.textContent = card.polarityFlipReasonFa || card.polarityFlipBadgeFa || "🔄 چرخش قطبیت هوشمند";
       } else {
         flipEl.classList.add("hidden");
       }
@@ -667,7 +666,9 @@
         const dailyTxt = !r.isA ? "HOLD" : r.dailyTargetWin ? "✓ WIN" : "✗ LOSS";
         const pnlCls = !r.isA ? "" : Number(r.execPnl) >= 0 ? "pos-res" : "neg-res";
         const pnlTxt = !r.isA ? "—" : fmtSignedUsd(r.execPnl);
-        const flipMini = r.polarityFlipped ? `<span class="mini-flip-tag" title="چرخش قطبیت فعال">🔄 قطبیت</span>` : "";
+        const flipMini = r.polarityFlipped
+          ? `<span class="mini-flip-tag" title="${r.polarityFlipReasonFa || "چرخش قطبیت هوشمند"}">🔄 چرخش قطبیت هوشمند</span>`
+          : "";
         const sigTxt =
           r.direction === "LONG XAU"
             ? `<span class="pos-res ltr-num">▲ LONG XAU</span> ${flipMini}`

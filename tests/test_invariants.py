@@ -224,13 +224,14 @@ class TestXauusdFusionInvariants(unittest.TestCase):
 
     def test_pipeline_outputs_production_shards_and_nov2026_recovery(self) -> None:
         summary_path = os.path.join(DATA_DIR, "xauusd_backtest_summary.json")
+        v50_path = os.path.join(DATA_DIR, "v50_backtest_summary.json")
         preds_path = os.path.join(DATA_DIR, "xauusd_predictions_2012_2026.json")
         shard_path = os.path.join(SHARDS_DIR, "latest_xauusd_signals.json")
         hist_shard_path = os.path.join(DATA_DIR, "xauusd_history_shard.json")
 
         with open(summary_path, encoding="utf-8") as f:
             summary = json.load(f)
-        self.assertEqual(summary["version"], "5.0.0")
+        self.assertEqual(summary["version"], "5.1.0")
         self.assertEqual(summary["subset_violations"], 0)
         self.assertEqual(summary["lookahead_leakage"], 0)
         self.assertEqual(summary["distinct_8v8_rate_pct"], 100.0)
@@ -239,10 +240,24 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         self.assertGreaterEqual(summary["max_sig_sums"]["FINAL"], 20)
         self.assertGreaterEqual(summary["max_sig_sums"]["PRIM"], 28)
 
+        # CRITICAL INVARIANT: 100% Zero Trade Loss across Train, Val 2025, and Blind OOS 2026 vs v5.0.0!
+        if os.path.exists(v50_path):
+            with open(v50_path, encoding="utf-8") as f:
+                v50 = json.load(f)
+            for sp in ("TRAIN", "VAL", "OOS"):
+                for tk in ("TIER_C", "TIER_B", "TIER_A", "ALL_RAW"):
+                    self.assertEqual(
+                        summary["splits"][sp][tk]["n"],
+                        v50["splits"][sp][tk]["n"],
+                        f"Trade count mismatch on {sp} {tk}",
+                    )
+
         # Verify calibration benchmarks on VAL 2025 & Blind OOS 2026
         for sp, yrs in (("VAL", 1.0), ("OOS", 0.90)):
             self.assertGreaterEqual(summary["splits"][sp]["TIER_C"]["daily_win_rate"], 75.0)
             self.assertGreaterEqual(summary["splits"][sp]["TIER_B"]["daily_win_rate"], 72.0)
+            self.assertGreaterEqual(summary["splits"][sp]["TIER_C"]["exec_pf"], 1.30)
+            self.assertGreaterEqual(summary["splits"][sp]["TIER_B"]["exec_pf"], 1.30)
             trd_b_yr = summary["splits"][sp]["TIER_B"]["n"] / yrs
             trd_a_yr = summary["splits"][sp]["TIER_A"]["n"] / yrs
             self.assertTrue(40.0 <= trd_b_yr <= 75.0, f"{sp} Tier B trd/yr={trd_b_yr}")
@@ -256,12 +271,15 @@ class TestXauusdFusionInvariants(unittest.TestCase):
             self.assertFalse((hr["isC"] and not hr["isB"]) or (hr["isB"] and not hr["isA"]))
             if hr["isB"] or hr["isC"]:
                 self.assertEqual(len(hr["vetoReasons"]), 0)
+            if hr.get("polarityFlipped"):
+                self.assertLess(hr["winProbPct"], 85.0)
 
-        # Verify clean recovery of 2026-11-02 (Mon), 2026-11-03 (Tue), and 2026-11-04 (Wed)!
+        # Verify clean recovery of 2026-11-02..2026-11-05 + 2026-08-31 runner & TP1_D fixes!
         for d_rec, exp_dir in (
             ("2026-11-02", "LONG XAU"),
             ("2026-11-03", "SHORT XAU"),
             ("2026-11-04", "LONG XAU"),
+            ("2026-11-05", "LONG XAU"),
         ):
             self.assertIn(d_rec, h_by_date)
             row_d = h_by_date[d_rec]
@@ -269,6 +287,21 @@ class TestXauusdFusionInvariants(unittest.TestCase):
             self.assertEqual(row_d["direction"], exp_dir)
             self.assertTrue(row_d["dailyTargetWin"])
             self.assertTrue(row_d["execWin"])
+
+        # 2026-11-04 must capture true TP1+TP2+TP3/Runner profit (> $40/oz, not $11.20!)
+        r_1104 = h_by_date["2026-11-04"]
+        self.assertTrue(r_1104["hitTp1"] and r_1104["hitTp2"] and r_1104["hitTp3"])
+        self.assertGreater(r_1104["execPnl"], 40.0)
+
+        # 2026-08-31 must have positive TP1 stepped profit (not -$1.70!)
+        r_0831 = h_by_date["2026-08-31"]
+        self.assertTrue(r_0831["execWin"])
+        self.assertGreater(r_0831["execPnl"], 10.0)
+
+        # 2026-11-05 must show Smart Polarity Inversion badge
+        r_1105 = h_by_date["2026-11-05"]
+        self.assertTrue(r_1105["polarityFlipped"])
+        self.assertEqual(r_1105["polarityFlipBadgeFa"], "🔄 چرخش قطبیت هوشمند")
 
         if os.path.exists(preds_path):
             with open(preds_path, encoding="utf-8") as f:
@@ -280,7 +313,7 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         with open(shard_path, encoding="utf-8") as f:
             shard = json.load(f)
         self.assertEqual(shard["service"], "XAUUSD-FUSION-SIGNAL")
-        self.assertEqual(shard["version"], "5.0.0")
+        self.assertEqual(shard["version"], "5.1.0")
         self.assertIn("sessionDate", shard)
         self.assertIn("threeMethodComparison", shard)
         self.assertIn("geo", shard["threeMethodComparison"])

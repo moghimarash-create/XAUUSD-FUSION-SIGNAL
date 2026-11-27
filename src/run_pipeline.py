@@ -55,7 +55,7 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 SHARDS_DIR = os.path.join(ROOT_DIR, "shards")
 
-PIPELINE_VERSION = "5.0.0"
+PIPELINE_VERSION = "5.1.0"
 LOCKED_ANCHOR_KEY = "ANCHOR_DUAL_POLE_1800"
 LOCKED_ROUNDING_MODE = "round"
 
@@ -91,17 +91,17 @@ def _verify_price_free_twin_signature() -> bool:
 def _outcome_badge(row: dict[str, Any]) -> str:
     if not row.get("is_a"):
         return "🛡️ VETO / HOLD"
+    out_s = str(row.get("outcome", ""))
+    if "SL_LOSS" in out_s:
+        return "✗ SL"
     if row.get("hit_tp3_clean"):
         return "✓ TP3"
     if row.get("hit_tp2_clean"):
         return "✓ TP2"
     if row.get("hit_tp1_clean"):
         return "✓ TP1"
-    if row.get("hit_tp1_any") and row.get("daily_target_win"):
-        return "✓ TP1 (Daily)"
-    out_s = str(row.get("outcome", ""))
-    if "SL_LOSS" in out_s:
-        return "✗ SL"
+    if row.get("hit_tp1_any") and row.get("exec_win"):
+        return "✓ TP1"
     return "✓ CLOSE+" if row.get("exec_win") else "✗ CLOSE-"
 
 
@@ -1126,10 +1126,16 @@ def run_full_pipeline() -> dict[str, Any]:
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(SHARDS_DIR, exist_ok=True)
 
+    v50_splits = None
+    v50_path = os.path.join(DATA_DIR, "v50_backtest_summary.json")
+    if os.path.exists(v50_path):
+        with open(v50_path, encoding="utf-8") as f:
+            v50_splits = json.load(f).get("splits")
+
     summary_export = {
         "service": "XAUUSD-FUSION-SIGNAL",
         "version": PIPELINE_VERSION,
-        "versionTag": "v5.0",
+        "versionTag": "v5.1",
         "lastUpdatedUtc": now_iso,
         "locked_anchor": winner_run["anchor_key"],
         "locked_anchor_label": winner_run["anchor_label"],
@@ -1163,7 +1169,8 @@ def run_full_pipeline() -> dict[str, Any]:
             "v1": v1_splits,
             "v3": v3_splits,
             "v4": v4_splits,
-            "v5": winner_run["splits"],
+            "v50": v50_splits,
+            "v51": winner_run["splits"],
         },
     }
     with open(os.path.join(DATA_DIR, "xauusd_backtest_summary.json"), "w", encoding="utf-8") as f:

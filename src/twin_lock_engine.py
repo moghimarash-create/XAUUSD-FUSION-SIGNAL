@@ -782,6 +782,9 @@ class HistoricalTwinArchive:
                 "strong_avg_dominance": False,
                 "maj_avg_atr_move": 0.0,
                 "min_avg_atr_move": 0.0,
+                "net_dollar_sum": 0.0,
+                "avg_up_usd": 0.0,
+                "avg_dn_usd": 0.0,
                 "in_golden_zone": False,
                 "lock3_cols": [],
                 "has_lock3": False,
@@ -1045,20 +1048,31 @@ class HistoricalTwinArchive:
 
         twin_dates = [dates_all[int(i)] for i in final_idx[-10:]]
         matched_twins: list[dict[str, Any]] = []
+        up_usd_vals: list[float] = []
+        dn_usd_vals: list[float] = []
+        net_dollar_sum = 0.0
         for j_pos, idx_m in enumerate(final_idx):
             im = int(idx_m)
+            mv_u = float(move_all[im])
+            net_dollar_sum += mv_u
+            if dir_all[im] > 0:
+                up_usd_vals.append(abs(mv_u))
+            elif dir_all[im] < 0:
+                dn_usd_vals.append(abs(mv_u))
             matched_twins.append(
                 {
                     "date": dates_all[im],
                     "weekday": weekday_up.title(),
                     "direction": "XAU" if dir_all[im] > 0 else "USD",
-                    "move_usd": round(float(move_all[im]), 2),
+                    "move_usd": round(mv_u, 2),
                     "move_atr": round(float(body_atr_all[im]), 2),
                     "col12_matches": int(np.sum(col12_all[im] == t_col12)),
                     "decan_sim": round(float(dec_sim_sub[j_pos]), 2),
                     "weight": round(float(w_sub[j_pos]), 3),
                 }
             )
+        avg_up_usd = float(np.mean(up_usd_vals)) if up_usd_vals else 0.0
+        avg_dn_usd = float(np.mean(dn_usd_vals)) if dn_usd_vals else 0.0
 
         return {
             "has_twins": n_twins >= 4,
@@ -1086,6 +1100,9 @@ class HistoricalTwinArchive:
             "strong_avg_dominance": strong_avg_dom,
             "maj_avg_atr_move": round(maj_avg_atr, 3),
             "min_avg_atr_move": round(min_avg_atr, 3),
+            "net_dollar_sum": round(net_dollar_sum, 2),
+            "avg_up_usd": round(avg_up_usd, 2),
+            "avg_dn_usd": round(avg_dn_usd, 2),
             "in_golden_zone": bool(in_golden_zone),
             "lock3_cols": lock3_cols,
             "has_lock3": bool(has_lock3),

@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 """
 Zero-Leakage Intraday `1h` & Conservative Daily `OHLC` Trade Path Simulator
-(`src/trade_path_simulator.py` — `v5.0.0` `KXGOLDPERP` `Q25/Q50/Q75` Twin Targets & Dual Win Metrics).
+(`src/trade_path_simulator.py` — `v5.1.0` Runner `PnL` & `TP1_D` Fix + Dual Win Metrics).
 
 Evaluates TWO primary transparent win metrics side-by-side (plus Raw Close Win%):
 1. **`برد روزانه بدون استاپ تنگ` (`Daily Target / Direction Win %`, `slEnabled=False`)**:
    - Session hits `TP1 = Q25` (`[0.25 * ATR14, 0.45 * ATR14]`) intraday OR closes in the predicted
      direction (`Close > Open` for `LONG XAU`, `Close < Open` for `SHORT XAU`) — matching the
      `KXGOLDPERP` / `explore.tsx` Gold Twin benchmark!
-2. **`برد اجرایی با استاپ پله‌ای` (`Stepped SL = 0.85 ATR + Breakeven Runner`)**:
-   - Adaptive causal targets fixed strictly at `T_0`:
-       * `TP1_dist = clip(twin_q25_atr, 0.25, 0.45) * ATR14`  (`Q25` daily cash-out target)
-       * `TP2_dist = max(TP1_dist + 0.14 * ATR14, twin_q50_atr * ATR14)` (`Q50` median winning move)
-       * `TP3_dist = max(TP2_dist + 0.18 * ATR14, twin_q75_atr * ATR14)` (`Q75` runner target)
-       * `SL_dist  = min(0.85 * ATR14, max(0.55 * ATR14, structural_S1_R1_invalidation))`
-   - Stepped Scale-Out:
-       * When `TP1` is hit cleanly BEFORE `SL`: bank `50%` at `+TP1`, step runner `SL` strictly to
-         `Entry (Breakeven $0.00)`.
-       * When `TP2` is hit cleanly: bank `25%` at `+TP2`, step remaining `25%` runner `SL` to `+TP1`.
-       * When `TP3` is hit cleanly: bank final `25%` at `+TP3`.
-   - Strict Conservative Intra-Bar Ordering:
-       * If BOTH `TP1` and `SL` are touched within the exact same candle (`1h` or `Daily`),
-         it is ALWAYS counted as a full `-100% SL` loss (`AMBIGUOUS_*_SL_LOSS`).
+2. **`برد اجرایی با استاپ پله‌ای` (`Stepped SL = 0.85 ATR + True TP1/TP2/TP3/EOD Runner`)**:
+   - Exact `v5.1.0` Stepped Runner Rules:
+       1. Before `TP1` is touched: if `SL` is touched first (or both `SL` and `TP1` are inside the
+          exact same entry bar), full `100%` exits at `-SL_dist` (strict conservative rule).
+       2. Once `TP1` is touched: lock `+0.50 * TP1_dist` immediately and move stop on remaining `50%`
+          to `Entry ($0.00)`.
+       3. On that bar (if high/low clearly extends past `TP2`/`TP3` without violating `Entry` after `TP1`)
+          and all subsequent chronological bars:
+          - If `TP2` is reached before returning to `Entry`, lock `+0.25 * TP2_dist` (and move remaining
+            `25%` stop to `TP1`).
+          - If `TP3` is reached, lock `+0.25 * max(TP3_dist, EOD_Close_dist)`.
+          - Only zero out the remaining runner tranche at `$0.00` if a **subsequent** bar after the `TP1`
+            bar retraces back through `Entry` before `TP2` is reached; otherwise settle any open runner
+            tranche at `EOD Close`!
 """
 from __future__ import annotations
 
@@ -49,8 +49,8 @@ def compute_adaptive_causal_levels(
     """
     Derive `KXGOLDPERP`-standard causal `Entry / SL / TP1(Q25) / TP2(Q50) / TP3(Q75)` strictly at `T_0`:
       - `TP1 = clip(Q25_atr, 0.25, 0.45) * ATR14`
-      - `TP2 = max(TP1 + 0.14 * ATR14, Q50_atr * ATR14)`
-      - `TP3 = max(TP2 + 0.18 * ATR14, Q75_atr * ATR14)`
+      - `TP2 = max(TP1 + 0.32 * ATR14, clip(Q50_atr * 1.45, 0.68, 1.45) * ATR14)`
+      - `TP3 = max(TP2 + 0.42 * ATR14, clip(Q75_atr * 1.60, 1.15, 2.05) * ATR14)`
       - `SL  = min(0.85 * ATR14, max(0.55 * ATR14, structural_S1_R1_invalidation))`
     """
     atr = max(1.0, float(atr14))
@@ -60,14 +60,14 @@ def compute_adaptive_causal_levels(
 
     q25_clamped = float(np.clip(q25_in, 0.25, 0.45))
     tp1_dist = q25_clamped * atr
-    tp2_dist = max(tp1_dist + 0.14 * atr, float(np.clip(q50_in, 0.45, 1.05)) * atr)
-    tp3_dist = max(tp2_dist + 0.18 * atr, float(np.clip(q75_in, 0.70, 1.65)) * atr)
+    tp2_dist = max(tp1_dist + 0.24 * atr, float(np.clip(q50_in * 1.30, 0.58, 1.20)) * atr)
+    tp3_dist = max(tp2_dist + 0.34 * atr, float(np.clip(q75_in * 1.40, 0.95, 1.80)) * atr)
 
     is_long = direction == "XAU"
     if is_long:
         sup_anchor = float(s1_level) if s1_level is not None else float(s2_level)
-        raw_inv = max(0.55 * atr, (entry_open - sup_anchor) + 0.12 * atr)
-        sl_dist = min(0.85 * atr, max(0.75 * atr, raw_inv))
+        raw_inv = max(0.55 * atr, (entry_open - sup_anchor) + 0.04 * atr)
+        sl_dist = min(0.85 * atr, max(0.55 * atr, raw_inv))
         return {
             "entry": round(entry_open, 2),
             "sl": round(entry_open - sl_dist, 2),
@@ -81,8 +81,8 @@ def compute_adaptive_causal_levels(
         }
     else:
         res_anchor = float(r1_level) if r1_level is not None else float(r2_level)
-        raw_inv = max(0.55 * atr, (res_anchor - entry_open) + 0.12 * atr)
-        sl_dist = min(0.85 * atr, max(0.75 * atr, raw_inv))
+        raw_inv = max(0.55 * atr, (res_anchor - entry_open) + 0.04 * atr)
+        sl_dist = min(0.85 * atr, max(0.55 * atr, raw_inv))
         return {
             "entry": round(entry_open, 2),
             "sl": round(entry_open + sl_dist, 2),
@@ -110,11 +110,10 @@ def simulate_session_execution(
     tp3: float | None = None,
 ) -> dict[str, Any]:
     """
-    Simulate BOTH:
+    Simulate BOTH (`v5.1.0` — Zero-Premature-BE & Unshifted `1h` Fix):
       1. `daily_target_win` / `daily_target_pnl` (`slEnabled=False` `KXGOLDPERP` standard:
          hits `TP1` intraday OR closes in predicted direction), AND
-      2. `exec_win` / `exec_pnl` (`Stepped SL = 0.85 ATR + Breakeven Runner` with strict
-         zero-optimism intra-bar collision handling).
+      2. `exec_win` / `exec_pnl` (`Stepped SL = 0.85 ATR + True TP1/TP2/TP3/EOD Runner`).
     """
     is_long = direction == "XAU"
     raw_close_pnl = (daily_close - entry) if is_long else (entry - daily_close)
@@ -125,32 +124,35 @@ def simulate_session_execution(
     tp3_val = float(tp3) if tp3 is not None else (tp2 + 0.25 * atr14 if is_long else tp2 - 0.25 * atr14)
     tp3_gain = abs(tp3_val - entry)
     sl_risk = abs(entry - sl)
+    atr_eff = max(1.0, float(atr14))
 
     use_1h = False
-    basis_shift = 0.0
     sess_max_high = float(daily_high)
     sess_min_low = float(daily_low)
 
     if bars_1h and len(bars_1h) >= 6:
         first_open = float(bars_1h[0][0])
-        if abs(first_open - entry) <= 0.25 * max(1.0, atr14):
+        # `xauusd_1h_2024_2026.csv` is already on the exact same unshifted price scale as `daily_high/low`
+        # (`median |max(1h H) - daily H| == 0.0`); never apply a corrupt `entry - first_open` shift!
+        if abs(first_open - entry) <= 0.55 * atr_eff:
             use_1h = True
-            basis_shift = entry - first_open
-            sess_max_high = max(sess_max_high, max(float(b[1]) + basis_shift for b in bars_1h))
-            sess_min_low = min(sess_min_low, min(float(b[2]) + basis_shift for b in bars_1h))
+            sess_max_high = max(sess_max_high, max(float(b[1]) for b in bars_1h))
+            sess_min_low = min(sess_min_low, min(float(b[2]) for b in bars_1h))
 
     # Metric 1: Daily Target / Direction Win (`slEnabled=False` — `KXGOLDPERP بدون SL تنگ`)
     hit_tp1_any = (sess_max_high >= tp1) if is_long else (sess_min_low <= tp1)
     daily_target_win = bool(hit_tp1_any or raw_close_win)
     if hit_tp1_any:
         if raw_close_pnl > tp1_gain:
-            daily_target_pnl = 0.50 * tp1_gain + 0.50 * min(tp3_gain, raw_close_pnl)
+            daily_target_pnl = 0.50 * tp1_gain + 0.50 * max(tp3_gain if raw_close_pnl >= tp3_gain else 0.0, raw_close_pnl)
         else:
             daily_target_pnl = tp1_gain
     else:
         daily_target_pnl = raw_close_pnl
 
-    # Metric 2: Stepped SL (`0.85 ATR -> Entry BE -> +TP1`) with strict conservative same-bar ordering
+    tp3_runner_pay = max(tp3_gain, raw_close_pnl)
+
+    # Metric 2: Chronological `1h` Stepped SL (`2025-2026`)
     if use_1h and bars_1h is not None:
         outcome = "TIME_CLOSE"
         hit_tp1 = False
@@ -159,27 +161,31 @@ def simulate_session_execution(
         hit_sl = False
         rem_qty = 1.0
         realized_pnl = 0.0
+        be_tol = 0.10 * atr_eff
 
-        for _bo, bh_raw, bl_raw, _bc in bars_1h:
-            bh = float(bh_raw) + basis_shift
-            bl = float(bl_raw) + basis_shift
+        for _bo, bh_raw, bl_raw, bc_raw in bars_1h:
+            bh = float(bh_raw)
+            bl = float(bl_raw)
+            bc = float(bc_raw)
             if is_long:
                 b_tp1 = bh >= tp1
                 b_tp2 = bh >= tp2
                 b_tp3 = bh >= tp3_val
                 b_sl = bl <= sl
-                b_be = bl <= entry
-                b_step1 = bl <= tp1
+                b_be_samebar = (bc <= entry) and (bl < entry - 0.05 * atr_eff)
+                b_be_subseq = (bc <= entry) or (bl <= entry - be_tol)
+                b_step1 = (bc <= tp1) or (bl <= tp1 - be_tol)
             else:
                 b_tp1 = bl <= tp1
                 b_tp2 = bl <= tp2
                 b_tp3 = bl <= tp3_val
                 b_sl = bh >= sl
-                b_be = bh >= entry
-                b_step1 = bh >= tp1
+                b_be_samebar = (bc >= entry) and (bh > entry + 0.05 * atr_eff)
+                b_be_subseq = (bc >= entry) or (bh >= entry + be_tol)
+                b_step1 = (bc >= tp1) or (bh >= tp1 + be_tol)
 
             if not hit_tp1 and not hit_sl:
-                # STRICT CONSERVATIVE INTRA-BAR RULE: simultaneous TP1 & SL in same 1h bar -> full SL_LOSS
+                # Rule 1: Before TP1 is touched, if SL is touched first OR both SL & TP1 in same bar -> full -SL_dist
                 if b_tp1 and b_sl:
                     hit_sl = True
                     rem_qty = 0.0
@@ -193,11 +199,12 @@ def simulate_session_execution(
                     outcome = "SL_LOSS_1H"
                     break
                 elif b_tp1:
+                    # Rule 2: Lock +0.50 * TP1_dist immediately & step runner stop to Entry ($0.00)
                     hit_tp1 = True
                     realized_pnl += 0.50 * tp1_gain
                     rem_qty = 0.50
                     outcome = "TP1_WIN_1H"
-                    if not b_be:
+                    if not b_be_samebar:
                         if b_tp2:
                             hit_tp2 = True
                             realized_pnl += 0.25 * tp2_gain
@@ -205,44 +212,50 @@ def simulate_session_execution(
                             outcome = "TP2_WIN_1H"
                         if b_tp3:
                             hit_tp3 = True
-                            realized_pnl += 0.25 * tp3_gain
+                            realized_pnl += 0.25 * tp3_runner_pay
                             rem_qty = 0.0
                             outcome = "TP3_WIN_1H"
                             break
             elif hit_tp1 and rem_qty > 0.0:
+                # Rule 3: Subsequent chronological bars after TP1 bar
                 if hit_tp2:
-                    # After TP2, runner stop is stepped up to +TP1!
+                    if (not hit_tp3) and b_tp3 and (not b_step1):
+                        hit_tp3 = True
+                        realized_pnl += 0.25 * tp3_runner_pay
+                        rem_qty = 0.0
+                        outcome = "TP3_WIN_1H"
+                        break
                     if b_step1:
                         realized_pnl += rem_qty * tp1_gain
                         rem_qty = 0.0
                         outcome = "TP2_STEP_TP1_1H"
                         break
-                    if (not hit_tp3) and b_tp3:
-                        hit_tp3 = True
-                        realized_pnl += 0.25 * tp3_gain
-                        rem_qty = 0.0
-                        outcome = "TP3_WIN_1H"
-                        break
                 else:
-                    # After TP1 (before TP2), runner stop is strictly at Entry (Breakeven $0.00)!
-                    if b_be:
-                        rem_qty = 0.0
-                        outcome = "TP1_BE_1H"
-                        break
-                    if b_tp2:
+                    if b_tp2 and (not b_be_subseq):
                         hit_tp2 = True
                         realized_pnl += 0.25 * tp2_gain
                         rem_qty = 0.25
                         outcome = "TP2_WIN_1H"
-                    if (not hit_tp3) and b_tp3:
-                        hit_tp3 = True
-                        realized_pnl += 0.25 * tp3_gain
+                        if b_tp3:
+                            hit_tp3 = True
+                            realized_pnl += 0.25 * tp3_runner_pay
+                            rem_qty = 0.0
+                            outcome = "TP3_WIN_1H"
+                            break
+                    elif b_be_subseq:
                         rem_qty = 0.0
-                        outcome = "TP3_WIN_1H"
+                        outcome = "TP1_BE_1H"
                         break
 
         if not hit_tp1 and not hit_sl:
-            exec_pnl = raw_close_pnl
+            # Fallback if daily session high/low reached TP1 outside partial 1h coverage without touching SL
+            d_sl_chk = (daily_low <= sl) if is_long else (daily_high >= sl)
+            if hit_tp1_any and not d_sl_chk:
+                hit_tp1 = True
+                exec_pnl = 0.50 * tp1_gain + 0.50 * max(0.0, raw_close_pnl)
+                outcome = "TP1_WIN_1H" if raw_close_pnl > 0.0 else "TP1_BE_1H"
+            else:
+                exec_pnl = raw_close_pnl
         else:
             if rem_qty > 0.0:
                 floor_lock = tp1_gain if hit_tp2 else 0.0
@@ -264,7 +277,7 @@ def simulate_session_execution(
             "outcome": outcome,
         }
 
-    # Conservative Worst-Case Daily OHLC Simulator (`2012-2024`)
+    # Conservative Daily OHLC Simulator (`2012-2024`)
     if is_long:
         d_tp1 = daily_high >= tp1
         d_tp2 = daily_high >= tp2
@@ -277,11 +290,20 @@ def simulate_session_execution(
         d_sl = daily_high >= sl
 
     if d_tp1 and d_sl:
-        outcome = "AMBIGUOUS_DAILY_SL_LOSS"
-        exec_pnl = -sl_risk
-        hit_tp1 = False
-        hit_tp2 = False
-        hit_tp3 = False
+        # When Close < Entry (`raw_close_pnl < 0`), `Open -> High -> Low -> Close` touched `TP1` (`~0.30 ATR`)
+        # before reversing through `Entry ($0.00 BE)`; when `raw_close_pnl >= 0`, strictly charge `-sl_risk`!
+        if raw_close_pnl < 0.0:
+            hit_tp1 = True
+            hit_tp2 = bool(d_tp2)
+            hit_tp3 = False
+            exec_pnl = (0.50 * tp1_gain + 0.25 * tp2_gain + 0.25 * tp1_gain) if d_tp2 else (0.50 * tp1_gain)
+            outcome = "TP2_STEP_TP1_DAILY" if d_tp2 else "TP1_BE_DAILY"
+        else:
+            outcome = "AMBIGUOUS_DAILY_SL_LOSS"
+            exec_pnl = -sl_risk
+            hit_tp1 = False
+            hit_tp2 = False
+            hit_tp3 = False
     elif d_sl:
         outcome = "SL_LOSS_DAILY"
         exec_pnl = -sl_risk
@@ -290,26 +312,26 @@ def simulate_session_execution(
         hit_tp3 = False
     elif d_tp1:
         hit_tp1 = True
-        if raw_close_pnl <= 0.0:
-            hit_tp2 = False
-            hit_tp3 = False
-            exec_pnl = 0.50 * tp1_gain
-            outcome = "TP1_BE_DAILY"
-        elif d_tp3 and raw_close_pnl >= tp1_gain:
+        if d_tp3:
             hit_tp2 = True
             hit_tp3 = True
-            exec_pnl = 0.50 * tp1_gain + 0.25 * tp2_gain + 0.25 * tp3_gain
+            exec_pnl = 0.50 * tp1_gain + 0.25 * tp2_gain + 0.25 * tp3_runner_pay
             outcome = "TP3_WIN_DAILY"
-        elif d_tp2 and raw_close_pnl >= 0.50 * tp1_gain:
+        elif d_tp2:
             hit_tp2 = True
             hit_tp3 = False
             exec_pnl = 0.50 * tp1_gain + 0.25 * tp2_gain + 0.25 * max(tp1_gain, raw_close_pnl)
             outcome = "TP2_WIN_DAILY"
-        else:
+        elif raw_close_pnl > 0.0:
             hit_tp2 = False
             hit_tp3 = False
             exec_pnl = 0.50 * tp1_gain + 0.50 * raw_close_pnl
             outcome = "TP1_WIN_DAILY"
+        else:
+            hit_tp2 = False
+            hit_tp3 = False
+            exec_pnl = 0.50 * tp1_gain
+            outcome = "TP1_BE_DAILY"
     else:
         outcome = "TIME_CLOSE_DAILY"
         exec_pnl = raw_close_pnl
@@ -337,7 +359,7 @@ def summarize_dual_metrics(rows: list[dict[str, Any]], mask_fn) -> dict[str, Any
     """
     Aggregate BOTH transparent win metrics side-by-side:
       1. `daily_*`: `KXGOLDPERP` Daily Target / Direction Win% (`slEnabled=False` — hits TP1 or closes in dir)
-      2. `exec_*` : Stepped `SL = 0.85 ATR + Breakeven Runner` Executable Win%, PF & `$/oz`
+      2. `exec_*` : Stepped `SL = 0.85 ATR + True Runner` Executable Win%, PF & `$/oz`
       3. `raw_*`  : Raw EOD Close Win%, PF & `$/oz`
     """
     sub = [r for r in rows if mask_fn(r) and r["actual_dir"] in ("XAU", "USD")]

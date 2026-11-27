@@ -1,9 +1,9 @@
 {
   "service": "XAUUSD-FUSION-SIGNAL",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "anchor": "ANCHOR_DUAL_POLE_1800",
   "feedSource": "CACHED_VERIFIED_FEED",
-  "lastUpdatedUtc": "2026-11-27T09:28:25Z",
+  "lastUpdatedUtc": "2026-11-27T10:55:42Z",
   "sessionDate": "2026-11-26",
   "weekday": "Thursday",
   "candleOpenUtc": "2026-11-25T23:00:00Z",
@@ -30,11 +30,11 @@
   "winProbPct": 89.1,
   "kellyMultiplier": 1.2,
   "entryPrice": 3619.8,
-  "sl": 3704.46,
+  "sl": 3695.49,
   "tp1": 3591.75,
-  "tp2": 3569.31,
-  "tp3": 3530.6,
-  "rrRatio": 0.6,
+  "tp2": 3554.16,
+  "tp3": 3494.91,
+  "rrRatio": 0.87,
   "vetoReasons": [],
   "vetoShield6": [
     {
@@ -88,7 +88,7 @@
     "bullStrikeAbove": 3600.0,
     "bearStrikeBelow": 3625.0,
     "coreRangeBand": "$3,550 – $3,700",
-    "invalidationLevel": 3704.46,
+    "invalidationLevel": 3695.49,
     "impliedAboveOpenProbPct": 10.9,
     "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
   },
@@ -2330,7 +2330,7 @@
     "kelly_multiplier": 1.2,
     "win_prob_pct": 89.1,
     "confidence_pct": 89.1,
-    "rr_ratio": 0.6,
+    "rr_ratio": 0.87,
     "veto_flags": [],
     "veto_primary": "",
     "veto_shield_6": [
@@ -2384,10 +2384,10 @@
     "fusion_score": -0.8969,
     "pillars_aligned": 2,
     "entry": 3619.8,
-    "sl": 3704.46,
+    "sl": 3695.49,
     "tp1": 3591.75,
-    "tp2": 3569.31,
-    "tp3": 3530.6,
+    "tp2": 3554.16,
+    "tp3": 3494.91,
     "kalshi_bracket": {
       "series": "KXGOLD",
       "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -2396,7 +2396,7 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3704.46,
+      "invalidationLevel": 3695.49,
       "impliedAboveOpenProbPct": 10.9,
       "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
     }
@@ -2428,11 +2428,11 @@
     "winProbPct": 89.1,
     "kellyMultiplier": 1.2,
     "entryPrice": 3619.8,
-    "sl": 3704.46,
+    "sl": 3695.49,
     "tp1": 3591.75,
-    "tp2": 3569.31,
-    "tp3": 3530.6,
-    "rrRatio": 0.6,
+    "tp2": 3554.16,
+    "tp3": 3494.91,
+    "rrRatio": 0.87,
     "vetoReasons": [],
     "vetoShield6": [
       {
@@ -2486,7 +2486,7 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3704.46,
+      "invalidationLevel": 3695.49,
       "impliedAboveOpenProbPct": 10.9,
       "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
     },
@@ -4728,7 +4728,7 @@
       "kelly_multiplier": 1.2,
       "win_prob_pct": 89.1,
       "confidence_pct": 89.1,
-      "rr_ratio": 0.6,
+      "rr_ratio": 0.87,
       "veto_flags": [],
       "veto_primary": "",
       "veto_shield_6": [
@@ -4782,10 +4782,10 @@
       "fusion_score": -0.8969,
       "pillars_aligned": 2,
       "entry": 3619.8,
-      "sl": 3704.46,
+      "sl": 3695.49,
       "tp1": 3591.75,
-      "tp2": 3569.31,
-      "tp3": 3530.6,
+      "tp2": 3554.16,
+      "tp3": 3494.91,
       "kalshi_bracket": {
         "series": "KXGOLD",
         "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -4794,7 +4794,7 @@
         "bullStrikeAbove": 3600.0,
         "bearStrikeBelow": 3625.0,
         "coreRangeBand": "$3,550 – $3,700",
-        "invalidationLevel": 3704.46,
+        "invalidationLevel": 3695.49,
         "impliedAboveOpenProbPct": 10.9,
         "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
       }
@@ -4827,11 +4827,11 @@
     "winProbPct": 84.4,
     "kellyMultiplier": 0.8,
     "entryPrice": 3616.9,
-    "sl": 3701.05,
+    "sl": 3678.61,
     "tp1": 3588.85,
-    "tp2": 3562.14,
-    "tp3": 3538.36,
-    "rrRatio": 0.65,
+    "tp2": 3545.72,
+    "tp3": 3506.94,
+    "rrRatio": 1.15,
     "vetoReasons": [],
     "vetoShield6": [
       {
@@ -4885,7 +4885,7 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3701.05,
+      "invalidationLevel": 3678.61,
       "impliedAboveOpenProbPct": 15.6,
       "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
     },
@@ -7117,7 +7117,7 @@
       "kelly_multiplier": 0.8,
       "win_prob_pct": 84.4,
       "confidence_pct": 84.4,
-      "rr_ratio": 0.65,
+      "rr_ratio": 1.15,
       "veto_flags": [],
       "veto_primary": "",
       "veto_shield_6": [
@@ -7171,10 +7171,10 @@
       "fusion_score": -0.752,
       "pillars_aligned": 2,
       "entry": 3616.9,
-      "sl": 3701.05,
+      "sl": 3678.61,
       "tp1": 3588.85,
-      "tp2": 3562.14,
-      "tp3": 3538.36,
+      "tp2": 3545.72,
+      "tp3": 3506.94,
       "kalshi_bracket": {
         "series": "KXGOLD",
         "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -7183,7 +7183,7 @@
         "bullStrikeAbove": 3600.0,
         "bearStrikeBelow": 3625.0,
         "coreRangeBand": "$3,550 – $3,700",
-        "invalidationLevel": 3701.05,
+        "invalidationLevel": 3678.61,
         "impliedAboveOpenProbPct": 15.6,
         "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
       }
@@ -7216,11 +7216,11 @@
     "winProbPct": 89.1,
     "kellyMultiplier": 1.2,
     "entryPrice": 3619.8,
-    "sl": 3704.46,
+    "sl": 3695.49,
     "tp1": 3591.75,
-    "tp2": 3569.31,
-    "tp3": 3530.6,
-    "rrRatio": 0.6,
+    "tp2": 3554.16,
+    "tp3": 3494.91,
+    "rrRatio": 0.87,
     "vetoReasons": [],
     "vetoShield6": [
       {
@@ -7274,7 +7274,7 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3704.46,
+      "invalidationLevel": 3695.49,
       "impliedAboveOpenProbPct": 10.9,
       "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
     },
@@ -9516,7 +9516,7 @@
       "kelly_multiplier": 1.2,
       "win_prob_pct": 89.1,
       "confidence_pct": 89.1,
-      "rr_ratio": 0.6,
+      "rr_ratio": 0.87,
       "veto_flags": [],
       "veto_primary": "",
       "veto_shield_6": [
@@ -9570,10 +9570,10 @@
       "fusion_score": -0.8969,
       "pillars_aligned": 2,
       "entry": 3619.8,
-      "sl": 3704.46,
+      "sl": 3695.49,
       "tp1": 3591.75,
-      "tp2": 3569.31,
-      "tp3": 3530.6,
+      "tp2": 3554.16,
+      "tp3": 3494.91,
       "kalshi_bracket": {
         "series": "KXGOLD",
         "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -9582,7 +9582,7 @@
         "bullStrikeAbove": 3600.0,
         "bearStrikeBelow": 3625.0,
         "coreRangeBand": "$3,550 – $3,700",
-        "invalidationLevel": 3704.46,
+        "invalidationLevel": 3695.49,
         "impliedAboveOpenProbPct": 10.9,
         "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
       }
@@ -9615,11 +9615,11 @@
     "winProbPct": 84.4,
     "kellyMultiplier": 0.8,
     "entryPrice": 3616.9,
-    "sl": 3701.05,
+    "sl": 3678.61,
     "tp1": 3588.85,
-    "tp2": 3562.14,
-    "tp3": 3538.36,
-    "rrRatio": 0.65,
+    "tp2": 3545.72,
+    "tp3": 3506.94,
+    "rrRatio": 1.15,
     "vetoReasons": [],
     "vetoShield6": [
       {
@@ -9673,7 +9673,7 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3701.05,
+      "invalidationLevel": 3678.61,
       "impliedAboveOpenProbPct": 15.6,
       "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
     },
@@ -11905,7 +11905,7 @@
       "kelly_multiplier": 0.8,
       "win_prob_pct": 84.4,
       "confidence_pct": 84.4,
-      "rr_ratio": 0.65,
+      "rr_ratio": 1.15,
       "veto_flags": [],
       "veto_primary": "",
       "veto_shield_6": [
@@ -11959,10 +11959,10 @@
       "fusion_score": -0.752,
       "pillars_aligned": 2,
       "entry": 3616.9,
-      "sl": 3701.05,
+      "sl": 3678.61,
       "tp1": 3588.85,
-      "tp2": 3562.14,
-      "tp3": 3538.36,
+      "tp2": 3545.72,
+      "tp3": 3506.94,
       "kalshi_bracket": {
         "series": "KXGOLD",
         "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -11971,7 +11971,7 @@
         "bullStrikeAbove": 3600.0,
         "bearStrikeBelow": 3625.0,
         "coreRangeBand": "$3,550 – $3,700",
-        "invalidationLevel": 3701.05,
+        "invalidationLevel": 3678.61,
         "impliedAboveOpenProbPct": 15.6,
         "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
       }
