@@ -1651,3 +1651,34 @@ body {
   background: rgba(212, 175, 55, 0.16) !important;
   box-shadow: inset -3px 0 0 var(--gold-bright);
 }
+
+/* v4.2.0 Polarity Flip Badge */
+.polarity-flip-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fde68a;
+  font-size: 0.79rem;
+  font-weight: 800;
+}
+
+.polarity-flip-pill.hidden {
+  display: none;
+}
+
+.mini-flip-tag {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fde68a;
+  font-size: 0.67rem;
+  font-weight: 800;
+}

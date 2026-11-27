@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 """
 Zero-Leakage Intraday `1h` & Conservative Daily `OHLC` Trade Path Simulator
-(`src/trade_path_simulator.py`).
+(`src/trade_path_simulator.py` — `v4.2.0` Symmetric `SL` & 2-Tranche Scale-Out).
 
 Evaluates TWO side-by-side metrics with ZERO optimistic bias:
 1. **Raw Candle Close Win %**:
    - `LONG XAU`: `Close > Open` (`pnl_close = Close - Open`)
    - `SHORT XAU`: `Close < Open` (`pnl_close = Open - Close`)
-2. **Executable `TP1-Before-SL` Win %**:
+2. **Executable `TP1-Before-SL` + 2-Tranche Scale-Out (`50% TP1 + BE Runner -> TP2/TP3`)**:
    - Adaptive causal targets fixed strictly at `T_0`:
        * `TP1_dist = max(0.35 * ATR14, 0.65 * twin_p50_move)`
        * `TP2_dist = max(TP1_dist + 0.12 * ATR14, twin_p75_move)`
        * `TP3_dist = max(TP2_dist + 0.18 * ATR14, twin_p90_move)`
-       * `SL_dist  = min(1.10 * ATR14, max(0.45 * ATR14, dist_to_S2_or_R2_invalidation))`
-   - On `2025–2026` sessions with verified chronological `1h` bars (basis-aligned to `Today_Open`):
-       Steps chronologically bar-by-bar (`18:00 NY D-1 -> 17:00 NY D`).
-       If BOTH `TP1` and `SL` are touched within the same `1h` bar -> **CONSERVATIVE `SL` LOSS**.
-   - On `2012–2024` daily `OHLC` bars (or sessions without `1h` bars):
-       If BOTH `TP1` and `SL` are touched within the daily bar -> **CONSERVATIVE `SL` LOSS**!
-       If neither `TP1` nor `SL` is touched intraday -> exits at `17:00 NY` Close (`Close - Open` signed).
+       * `SL_dist  = min(0.72 * ATR14, max(0.45 * ATR14, structural_S1_R1_invalidation))`
+         so `TP1 / SL` R:R is balanced (`~0.75R–1.05R`).
+   - Institutional 2-Tranche Scale-Out:
+       * When `TP1` is hit cleanly first: bank `50%` at `+TP1`, move `SL` on remaining `50%`
+         strictly to `Entry (Breakeven $0.00)`, and scale `25%` at `TP2` + `25%` at `TP3`
+         (or exit remaining runner at `Breakeven $0.00` if stopped, or `17:00 NY` Close).
+   - Strict Conservative Intra-Bar Ordering:
+       * If BOTH `TP1` and `SL` are touched within the exact same candle (`1h` or `Daily`),
+         it is ALWAYS counted as a full `-100% SL` loss (`AMBIGUOUS_*_SL_LOSS`).
 """
 from __future__ import annotations
 
@@ -36,13 +38,15 @@ def compute_adaptive_causal_levels(
     twin_p50_atr: float,
     twin_p75_atr: float,
     twin_p90_atr: float,
+    s1_level: float | None = None,
+    r1_level: float | None = None,
 ) -> dict[str, float]:
     """
-    Derive adaptive causal `Entry / SL / TP1 / TP2 / TP3` strictly at `T_0` (zero look-ahead):
+    Derive symmetric adaptive causal `Entry / SL / TP1 / TP2 / TP3` strictly at `T_0` (zero look-ahead):
       - `TP1 = max(0.35 * ATR14, 0.65 * twin_p50_move)`
-      - `TP2 = twin_p75_move` (floored above `TP1`)
-      - `TP3 = twin_p90_move` (floored above `TP2`)
-      - `SL  = min(1.10 * ATR14, distance_to_S2_or_R2_invalidation)`
+      - `TP2 = max(TP1 + 0.12 * ATR14, twin_p75_move)`
+      - `TP3 = max(TP2 + 0.18 * ATR14, twin_p90_move)`
+      - `SL  = min(0.72 * ATR14, max(0.45 * ATR14, structural_S1_R1_invalidation))`
     """
     atr = max(1.0, float(atr14))
     p50_move = float(twin_p50_atr) * atr
@@ -55,8 +59,9 @@ def compute_adaptive_causal_levels(
 
     is_long = direction == "XAU"
     if is_long:
-        raw_inv = max(0.45 * atr, (entry_open - float(s2_level)) + 0.08 * atr)
-        sl_dist = min(1.10 * atr, raw_inv)
+        sup_anchor = float(s1_level) if s1_level is not None else float(s2_level)
+        raw_inv = max(0.45 * atr, (entry_open - sup_anchor) + 0.08 * atr)
+        sl_dist = min(0.72 * atr, raw_inv)
         return {
             "entry": round(entry_open, 2),
             "sl": round(entry_open - sl_dist, 2),
@@ -67,8 +72,9 @@ def compute_adaptive_causal_levels(
             "tp1_dist": round(tp1_dist, 2),
         }
     else:
-        raw_inv = max(0.45 * atr, (float(r2_level) - entry_open) + 0.08 * atr)
-        sl_dist = min(1.10 * atr, raw_inv)
+        res_anchor = float(r1_level) if r1_level is not None else float(r2_level)
+        raw_inv = max(0.45 * atr, (res_anchor - entry_open) + 0.08 * atr)
+        sl_dist = min(0.72 * atr, raw_inv)
         return {
             "entry": round(entry_open, 2),
             "sl": round(entry_open + sl_dist, 2),
@@ -94,19 +100,21 @@ def simulate_session_execution(
     tp3: float | None = None,
 ) -> dict[str, Any]:
     """
-    Simulate trade path with ZERO optimistic bias:
+    Simulate 2-Tranche Scale-Out (`50% TP1 + Breakeven Runner -> 25% TP2 + 25% TP3`) with ZERO optimistic bias:
       - Uses chronological `1h` bars when available & contract-aligned (`|open_1h - entry| <= 0.25 * ATR14`).
-      - Otherwise uses conservative worst-case daily `OHLC` (both `TP1` and `SL` touched -> **`SL` LOSS**).
+      - Otherwise uses conservative worst-case daily `OHLC`.
+      - Same-bar `TP1` + `SL` touch ALWAYS resolves as a full `-100% SL` loss.
     """
     is_long = direction == "XAU"
     raw_close_pnl = (daily_close - entry) if is_long else (entry - daily_close)
     raw_close_win = raw_close_pnl > 0.0
 
     tp1_gain = abs(tp1 - entry)
-    sl_risk = abs(entry - sl)
+    tp2_gain = abs(tp2 - entry)
     tp3_val = float(tp3) if tp3 is not None else (tp2 + 0.25 * atr14 if is_long else tp2 - 0.25 * atr14)
+    tp3_gain = abs(tp3_val - entry)
+    sl_risk = abs(entry - sl)
 
-    # Check if chronological 1h bars are available and on the same active contract basis
     use_1h = False
     basis_shift = 0.0
     if bars_1h and len(bars_1h) >= 6:
@@ -117,60 +125,92 @@ def simulate_session_execution(
 
     if use_1h and bars_1h is not None:
         outcome = "TIME_CLOSE"
-        exec_pnl = raw_close_pnl
         hit_tp1 = False
         hit_tp2 = False
         hit_tp3 = False
         hit_sl = False
+        rem_qty = 1.0
+        realized_pnl = 0.0
 
         for _bo, bh_raw, bl_raw, _bc in bars_1h:
             bh = float(bh_raw) + basis_shift
             bl = float(bl_raw) + basis_shift
             if is_long:
                 b_tp1 = bh >= tp1
-                b_sl = bl <= sl
                 b_tp2 = bh >= tp2
                 b_tp3 = bh >= tp3_val
+                b_sl = bl <= sl
+                b_be = bl <= entry
             else:
                 b_tp1 = bl <= tp1
-                b_sl = bh >= sl
                 b_tp2 = bl <= tp2
                 b_tp3 = bl <= tp3_val
+                b_sl = bh >= sl
+                b_be = bh >= entry
 
             if not hit_tp1 and not hit_sl:
-                # CONSERVATIVE INTRA-BAR RULE: simultaneous touch in same 1h candle -> SL_LOSS
+                # STRICT CONSERVATIVE INTRA-BAR RULE: simultaneous TP1 & SL in same 1h bar -> full SL_LOSS
                 if b_tp1 and b_sl:
                     hit_sl = True
+                    rem_qty = 0.0
+                    realized_pnl = -sl_risk
                     outcome = "AMBIGUOUS_1H_SL_LOSS"
-                    exec_pnl = -sl_risk
                     break
                 elif b_sl:
                     hit_sl = True
+                    rem_qty = 0.0
+                    realized_pnl = -sl_risk
                     outcome = "SL_LOSS_1H"
-                    exec_pnl = -sl_risk
                     break
                 elif b_tp1:
                     hit_tp1 = True
+                    realized_pnl += 0.50 * tp1_gain
+                    rem_qty = 0.50
                     outcome = "TP1_WIN_1H"
-                    exec_pnl = +tp1_gain
-                    if b_tp2:
-                        hit_tp2 = True
-                    if b_tp3:
-                        hit_tp3 = True
-            elif hit_tp1 and not hit_sl:
-                if b_sl:
+                    # Only award same-bar TP2/TP3 on the breakout candle if price stayed strictly clear of Entry (BE)
+                    if not b_be:
+                        if b_tp2:
+                            hit_tp2 = True
+                            realized_pnl += 0.25 * tp2_gain
+                            rem_qty = 0.25
+                            outcome = "TP2_WIN_1H"
+                        if b_tp3:
+                            hit_tp3 = True
+                            realized_pnl += 0.25 * tp3_gain
+                            rem_qty = 0.0
+                            outcome = "TP3_WIN_1H"
+                            break
+            elif hit_tp1 and rem_qty > 0.0:
+                # Runner phase: stop is strictly at Entry (Breakeven $0.00).
+                # Conservative intra-bar rule: if BE is touched in the same 1h bar as TP2/TP3, runner stops at BE ($0.00)!
+                if b_be:
+                    rem_qty = 0.0
+                    outcome = "TP2_BE_1H" if hit_tp2 else "TP1_BE_1H"
                     break
-                if b_tp2:
+                if (not hit_tp2) and b_tp2:
                     hit_tp2 = True
-                if b_tp3:
+                    realized_pnl += 0.25 * tp2_gain
+                    rem_qty = 0.25
+                    outcome = "TP2_WIN_1H"
+                if (not hit_tp3) and b_tp3:
                     hit_tp3 = True
+                    realized_pnl += 0.25 * tp3_gain
+                    rem_qty = 0.0
+                    outcome = "TP3_WIN_1H"
+                    break
 
-        exec_win = exec_pnl > 0.0
+        if not hit_tp1 and not hit_sl:
+            exec_pnl = raw_close_pnl
+        else:
+            if rem_qty > 0.0:
+                realized_pnl += rem_qty * max(0.0, raw_close_pnl)
+            exec_pnl = realized_pnl
+
         return {
             "path_source": "1H_CHRONOLOGICAL",
             "raw_close_win": bool(raw_close_win),
             "raw_close_pnl": round(raw_close_pnl, 2),
-            "exec_win": bool(exec_win),
+            "exec_win": bool(exec_pnl > 0.0),
             "exec_pnl": round(exec_pnl, 2),
             "hit_tp1_clean": bool(hit_tp1),
             "hit_tp2_clean": bool(hit_tp2),
@@ -178,7 +218,7 @@ def simulate_session_execution(
             "outcome": outcome,
         }
 
-    # Conservative Worst-Case Daily OHLC Simulator
+    # Conservative Worst-Case Daily OHLC Simulator (`2012-2024`)
     if is_long:
         d_tp1 = daily_high >= tp1
         d_tp2 = daily_high >= tp2
@@ -191,7 +231,7 @@ def simulate_session_execution(
         d_sl = daily_high >= sl
 
     if d_tp1 and d_sl:
-        # STRICT CONSERVATIVE RULE: both touched on same daily bar -> count as SL_LOSS!
+        # STRICT CONSERVATIVE RULE: both touched on same daily bar -> full SL_LOSS!
         outcome = "AMBIGUOUS_DAILY_SL_LOSS"
         exec_pnl = -sl_risk
         hit_tp1 = False
@@ -204,11 +244,28 @@ def simulate_session_execution(
         hit_tp2 = False
         hit_tp3 = False
     elif d_tp1:
-        outcome = "TP1_WIN_DAILY"
-        exec_pnl = +tp1_gain
         hit_tp1 = True
-        hit_tp2 = bool(d_tp2)
-        hit_tp3 = bool(d_tp3)
+        if raw_close_pnl <= 0.0:
+            # Price reversed across Entry after hitting TP1 -> runner stopped out at Breakeven ($0.00)
+            hit_tp2 = False
+            hit_tp3 = False
+            exec_pnl = 0.50 * tp1_gain
+            outcome = "TP1_BE_DAILY"
+        elif d_tp3 and raw_close_pnl >= tp1_gain:
+            hit_tp2 = True
+            hit_tp3 = True
+            exec_pnl = 0.50 * tp1_gain + 0.25 * tp2_gain + 0.25 * tp3_gain
+            outcome = "TP3_WIN_DAILY"
+        elif d_tp2 and raw_close_pnl >= 0.50 * tp1_gain:
+            hit_tp2 = True
+            hit_tp3 = False
+            exec_pnl = 0.50 * tp1_gain + 0.25 * tp2_gain + 0.25 * raw_close_pnl
+            outcome = "TP2_WIN_DAILY"
+        else:
+            hit_tp2 = False
+            hit_tp3 = False
+            exec_pnl = 0.50 * tp1_gain + 0.50 * raw_close_pnl
+            outcome = "TP1_WIN_DAILY"
     else:
         outcome = "TIME_CLOSE_DAILY"
         exec_pnl = raw_close_pnl
@@ -230,13 +287,14 @@ def simulate_session_execution(
 
 
 def summarize_dual_metrics(rows: list[dict[str, Any]], mask_fn) -> dict[str, Any]:
-    """Aggregate both Raw Candle Close metrics and Executable `TP1-Before-SL` metrics."""
+    """Aggregate both Raw Candle Close metrics and Executable `TP1-Before-SL` 2-Tranche metrics."""
     sub = [r for r in rows if mask_fn(r) and r["actual_dir"] in ("XAU", "USD")]
     n = len(sub)
     if n == 0:
         return {
             "n": 0,
             "lock3_rate": 0.0,
+            "flip_count": 0,
             "raw_wins": 0,
             "raw_losses": 0,
             "raw_win_rate": 0.0,
@@ -253,6 +311,7 @@ def summarize_dual_metrics(rows: list[dict[str, Any]], mask_fn) -> dict[str, Any
         }
 
     lock3_cnt = sum(1 for r in sub if r.get("has_lock3"))
+    flip_cnt = sum(1 for r in sub if r.get("polarity_flipped"))
 
     raw_pnls = [float(r["raw_close_pnl"]) for r in sub]
     raw_wins = sum(1 for p in raw_pnls if p > 0.0)
@@ -275,6 +334,7 @@ def summarize_dual_metrics(rows: list[dict[str, Any]], mask_fn) -> dict[str, Any
     return {
         "n": n,
         "lock3_rate": round(lock3_cnt * 100.0 / n, 1),
+        "flip_count": flip_cnt,
         "raw_wins": raw_wins,
         "raw_losses": raw_losses,
         "raw_win_rate": round(raw_wins * 100.0 / n, 2),

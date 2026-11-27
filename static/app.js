@@ -230,6 +230,17 @@
     $("hero-kelly-pill").textContent = `Quarter-Kelly: ${Number(card.kellyMultiplier || 0).toFixed(2)}x`;
     $("hero-direction-en").textContent = `${dir} • Bias: ${bias === "XAU" ? "LONG XAU (77°)" : "SHORT XAU / USD (70°)"}`;
 
+    const flipEl = $("hero-polarity-flip");
+    if (flipEl) {
+      if (card.polarityFlipped) {
+        flipEl.classList.remove("hidden");
+        flipEl.textContent =
+          card.polarityFlipReasonFa || "🔄 قطبیت معکوس اصلاح شد — چرخش قطبیت (Polarity Flip)";
+      } else {
+        flipEl.classList.add("hidden");
+      }
+    }
+
     const wp = Number(card.winProbPct || 50);
     $("hero-win-prob").textContent = `${wp.toFixed(1)}%`;
     $("hero-prob-fill").style.width = `${Math.max(15, Math.min(100, wp))}%`;
@@ -548,12 +559,13 @@
         const badgeCls = !r.isA ? "hold" : r.execWin ? "win" : "loss";
         const pnlCls = !r.isA ? "" : Number(r.execPnl) >= 0 ? "pos-res" : "neg-res";
         const pnlTxt = !r.isA ? "—" : fmtSignedUsd(r.execPnl);
+        const flipMini = r.polarityFlipped ? `<span class="mini-flip-tag" title="چرخش قطبیت فعال">🔄 قطبیت</span>` : "";
         const sigTxt =
           r.direction === "LONG XAU"
-            ? `<span class="pos-res ltr-num">▲ LONG XAU</span>`
+            ? `<span class="pos-res ltr-num">▲ LONG XAU</span> ${flipMini}`
             : r.direction === "SHORT XAU"
-            ? `<span class="neg-res ltr-num">▼ SHORT XAU</span>`
-            : `<span class="ltr-num">🛡️ HOLD (${r.biasDirection})</span>`;
+            ? `<span class="neg-res ltr-num">▼ SHORT XAU</span> ${flipMini}`
+            : `<span class="ltr-num">🛡️ HOLD (${r.biasDirection})</span> ${flipMini}`;
         const selCls = r.date === curActiveDate ? "selected-ledger-row" : "";
 
         return `

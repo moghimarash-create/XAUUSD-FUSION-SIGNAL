@@ -645,6 +645,8 @@ class HistoricalTwinArchive:
             twin_p50_atr=tp1_atr,
             twin_p75_atr=tp2_atr,
             twin_p90_atr=tp3_atr,
+            s1_level=float(s1),
+            r1_level=float(r1),
         )
 
         twin_dates = [dates_all[int(i)] for i in final_idx[-10:]]

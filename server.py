@@ -39,7 +39,7 @@ SUMMARY_PATH = os.path.join(DATA_DIR, "xauusd_backtest_summary.json")
 HISTORY_SHARD_PATH = os.path.join(DATA_DIR, "xauusd_history_shard.json")
 ARCHIVE_PKL_PATH = os.path.join(DATA_DIR, "xauusd_twin_archive.pkl")
 
-SERVICE_VERSION = "4.1.0"
+SERVICE_VERSION = "4.2.0"
 
 _STATE_LOCK = threading.Lock()
 _CACHE: dict[str, Any] = {

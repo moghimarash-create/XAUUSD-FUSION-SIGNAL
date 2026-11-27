@@ -118,6 +118,10 @@ def _build_compact_history_row(r: dict[str, Any]) -> dict[str, Any]:
         "isA": bool(r["is_a"]),
         "direction": r["action"],
         "biasDirection": r["pred_dir"],
+        "polarityFlipped": bool(r.get("polarity_flipped", False)),
+        "polarityFlipCode": r.get("polarity_flip_code", ""),
+        "polarityFlipBadgeFa": r.get("polarity_flip_badge_fa", ""),
+        "polarityFlipReasonFa": r.get("polarity_flip_reason_fa", ""),
         "winProbPct": r["win_prob_pct"],
         "kellyMultiplier": r["kelly_multiplier"],
         "entryPrice": r["entry"],
@@ -442,6 +446,11 @@ def build_live_signal_card(
         "isA": cba["is_a"],
         "direction": cba["action"],
         "biasDirection": bias_dir,
+        "polarityFlipped": bool(cba.get("polarity_flipped", False)),
+        "polarityFlipCode": cba.get("polarity_flip_code", ""),
+        "polarityFlipBadgeFa": cba.get("polarity_flip_badge_fa", ""),
+        "polarityFlipReasonFa": cba.get("polarity_flip_reason_fa", ""),
+        "f1ArcanumElement": cba.get("f1_arcanum_element", ""),
         "winProbPct": cba["win_prob_pct"],
         "kellyMultiplier": cba["kelly_multiplier"],
         "entryPrice": cba["entry"],
@@ -770,7 +779,7 @@ def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, 
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     return {
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.1.0",
+        "version": "4.2.0",
         "anchor": LOCKED_ANCHOR_KEY,
         "feedSource": feed_source,
         "lastUpdatedUtc": now_iso,
@@ -869,7 +878,7 @@ def build_signal_by_date_payload(
         return {
             "ok": True,
             "service": "XAUUSD-FUSION-SIGNAL",
-            "version": "4.1.0",
+            "version": "4.2.0",
             "requestedDate": req_iso,
             "snapped": snapped,
             "snappedNoteFa": snapped_note_fa,
@@ -942,7 +951,7 @@ def build_signal_by_date_payload(
     return {
         "ok": True,
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.1.0",
+        "version": "4.2.0",
         "requestedDate": req_iso,
         "snapped": snapped,
         "snappedNoteFa": snapped_note_fa,
@@ -1177,7 +1186,7 @@ def run_full_pipeline() -> dict[str, Any]:
 
     summary_export = {
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.1.0",
+        "version": "4.2.0",
         "versionTag": "v4.1",
         "lastUpdatedUtc": now_iso,
         "locked_anchor": winner_run["anchor_key"],
@@ -1217,7 +1226,7 @@ def run_full_pipeline() -> dict[str, Any]:
 
     shard_payload = {
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.1.0",
+        "version": "4.2.0",
         "anchor": LOCKED_ANCHOR_KEY,
         "feedSource": "CACHED_VERIFIED_FEED",
         "lastUpdatedUtc": now_iso,

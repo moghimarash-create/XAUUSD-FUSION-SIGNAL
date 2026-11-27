@@ -17,7 +17,12 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import unittest
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
 
 from src.astro_ephemeris_engine import evaluate_engine_a
 from src.data_loader import build_zero_leakage_daily_records, fetch_and_cache_market_data
@@ -136,7 +141,11 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         self.assertEqual(distinct_ok, len(eval_recs))
 
     def test_conservative_path_simulator_zero_optimism(self) -> None:
-        lvls = compute_adaptive_causal_levels("XAU", 3600.0, 50.0, 3560.0, 3640.0, 0.65, 0.95, 1.35)
+        lvls = compute_adaptive_causal_levels("XAU", 3600.0, 50.0, 3560.0, 3640.0, 0.65, 0.95, 1.35, 3580.0, 3620.0)
+        # Verify Symmetric Structural SL bound: 0.45 * ATR ($22.50) <= sl_dist <= 0.72 * ATR ($36.00)
+        self.assertGreaterEqual(lvls["sl_dist"], 22.50)
+        self.assertLessEqual(lvls["sl_dist"], 36.00)
+
         sim_d = simulate_session_execution(
             "XAU", 3600.0, lvls["sl"], lvls["tp1"], lvls["tp2"], 50.0,
             daily_high=lvls["tp2"] + 10.0, daily_low=lvls["sl"] - 5.0, daily_close=3620.0,
@@ -155,15 +164,36 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         self.assertFalse(sim_h["exec_win"])
         self.assertEqual(sim_h["outcome"], "AMBIGUOUS_1H_SL_LOSS")
 
+        # Verify 2-Tranche Scale-Out: Bar 1 hits TP1, Bar 2 hits TP2 & TP3 cleanly without touching Entry BE
+        clean_runner_1h = [
+            (3600.0, lvls["tp1"] + 1.0, 3595.0, lvls["tp1"]),
+            (lvls["tp1"], lvls["tp3"] + 2.0, 3605.0, lvls["tp3"]),
+        ] * 4
+        sim_runner = simulate_session_execution(
+            "XAU", 3600.0, lvls["sl"], lvls["tp1"], lvls["tp2"], 50.0,
+            daily_high=lvls["tp3"] + 2.0, daily_low=3595.0, daily_close=lvls["tp3"],
+            bars_1h=clean_runner_1h, tp3=lvls["tp3"],
+        )
+        self.assertTrue(sim_runner["exec_win"])
+        self.assertTrue(sim_runner["hit_tp1_clean"])
+        self.assertTrue(sim_runner["hit_tp2_clean"])
+        self.assertTrue(sim_runner["hit_tp3_clean"])
+        expected_scale_pnl = round(
+            0.50 * (lvls["tp1"] - 3600.0) + 0.25 * (lvls["tp2"] - 3600.0) + 0.25 * (lvls["tp3"] - 3600.0),
+            2,
+        )
+        self.assertAlmostEqual(sim_runner["exec_pnl"], expected_scale_pnl, places=1)
+
     def test_pipeline_outputs_and_production_shards(self) -> None:
         summary_path = os.path.join(DATA_DIR, "xauusd_backtest_summary.json")
+        v41_path = os.path.join(DATA_DIR, "v41_backtest_summary.json")
         preds_path = os.path.join(DATA_DIR, "xauusd_predictions_2012_2026.json")
         shard_path = os.path.join(SHARDS_DIR, "latest_xauusd_signals.json")
         hist_shard_path = os.path.join(DATA_DIR, "xauusd_history_shard.json")
 
         with open(summary_path, encoding="utf-8") as f:
             summary = json.load(f)
-        self.assertEqual(summary["version"], "4.1.0")
+        self.assertEqual(summary["version"], "4.2.0")
         self.assertEqual(summary["subset_violations"], 0)
         self.assertEqual(summary["lookahead_leakage"], 0)
         self.assertEqual(summary["distinct_8v8_rate_pct"], 100.0)
@@ -172,6 +202,14 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         self.assertLessEqual(summary["max_sig_sums"]["FINAL"], 8)
         self.assertLessEqual(summary["max_sig_sums"]["PRIM"], 12)
 
+        # Verify ZERO trade count loss across Train, Val 2025, and Blind OOS 2026
+        if os.path.exists(v41_path):
+            with open(v41_path, encoding="utf-8") as f:
+                v41 = json.load(f)
+            for sp in ("TRAIN", "VAL", "OOS"):
+                for tk in ("TIER_C", "TIER_B", "TIER_A", "ALL_RAW"):
+                    self.assertEqual(summary["splits"][sp][tk]["n"], v41["splits"][sp][tk]["n"])
+
         with open(hist_shard_path, encoding="utf-8") as f:
             hrows = json.load(f)
         self.assertGreater(len(hrows), 3500)
@@ -179,6 +217,8 @@ class TestXauusdFusionInvariants(unittest.TestCase):
             self.assertFalse((hr["isC"] and not hr["isB"]) or (hr["isB"] and not hr["isA"]))
             if hr["isB"] or hr["isC"]:
                 self.assertEqual(len(hr["vetoReasons"]), 0)
+            if hr.get("polarityFlipped"):
+                self.assertLess(hr["winProbPct"], 85.0)
 
         if os.path.exists(preds_path):
             with open(preds_path, encoding="utf-8") as f:
@@ -190,10 +230,11 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         with open(shard_path, encoding="utf-8") as f:
             shard = json.load(f)
         self.assertEqual(shard["service"], "XAUUSD-FUSION-SIGNAL")
-        self.assertEqual(shard["version"], "4.1.0")
+        self.assertEqual(shard["version"], "4.2.0")
         self.assertIn("sessionDate", shard)
         self.assertIn("kellyMultiplier", shard)
         self.assertIn("kalshiBracket", shard)
+        self.assertIn("polarityFlipped", shard)
         self.assertEqual(len({int(round(p["level"])) for p in shard["homeXauRoster"]}), 8)
         self.assertEqual(len({int(round(p["level"])) for p in shard["awayUsdRoster"]}), 8)
         for tw in shard["matchedTwins"]:
