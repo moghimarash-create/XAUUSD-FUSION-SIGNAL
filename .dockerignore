@@ -10,3 +10,4 @@ __pycache__/
 node_modules/
 *.log
 data/xauusd_predictions_2012_2026.json
+moghimarash-create/
