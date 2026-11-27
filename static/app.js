@@ -198,6 +198,54 @@
     banner.classList.add("hidden");
   }
 
+  function renderMacroEventRow(card) {
+    const rowEl = $("hero-macro-event-row");
+    const txtEl = $("hero-macro-event-text");
+    const bdgEl = $("hero-macro-event-badges");
+    if (!rowEl || !txtEl || !bdgEl) return;
+
+    const mev = card.macroEvent || {};
+    rowEl.classList.remove("regular", "tier1", "macro-flipped");
+
+    if (!mev.hasTier1Event) {
+      rowEl.classList.add("regular");
+      txtEl.textContent =
+        mev.phaseAlignmentFa ||
+        "📅 تقویم کلان: روز عادی بازار (بدون شوک خبری درجه ۱ — رژیم خالص همزادها)";
+      bdgEl.innerHTML = `<span class="macro-pill calm">بدون خبر درجه ۱</span>`;
+      return;
+    }
+
+    const isMacroFlip = Boolean(mev.macroFlipApplied) || String(card.polarityFlipCode || "").startsWith("M");
+    rowEl.classList.add(isMacroFlip ? "macro-flipped" : "tier1");
+
+    const bias = mev.releaseAstroBias || "NEUTRAL";
+    const statusFa =
+      mev.statusFa ||
+      (bias === "XAU" ? "همفاز با طلا" : bias === "USD" ? "همفاز با USD" : "متعادل / خنثی");
+    const domMeta = ELEM_META[mev.hebrewDominantElement] || { icon: "✨", fa: mev.hebrewDominantElement || "" };
+    const arcMeta = ELEM_META[mev.arcanaElement] || { icon: "🔮", fa: mev.arcanaElement || "" };
+
+    txtEl.innerHTML =
+      `📅 رویداد کلان امروز: <strong>${mev.eventNameFa || mev.eventNameEn}</strong> ` +
+      `(<span class="ltr-num">${mev.releaseTimeEt || ""}</span>) • ` +
+      `جماتریای عبری: <strong class="ltr-num">${mev.hebrewGematria ?? 0}</strong> (${domMeta.icon} ${domMeta.fa}) / ` +
+      `ابجد آرکانا: <strong class="ltr-num">${mev.ordinalGematria ?? 0} → #${mev.arcanaNumber ?? 1}</strong> (${arcMeta.icon} ${arcMeta.fa}) • ` +
+      `وضعیت: <strong>${statusFa}</strong>`;
+
+    const chips = [
+      `<span class="macro-pill code ltr-num">📰 ${mev.eventCode}</span>`,
+      `<span class="macro-pill bias-${bias.toLowerCase()}">${statusFa}</span>`,
+    ];
+    if (isMacroFlip) {
+      const ruleTag = mev.macroFlipRule || card.polarityFlipCode || "";
+      chips.unshift(
+        `<span class="macro-pill flip">📰🔄 چرخش قطبیت خبر + جماتریا <span class="ltr-num">(${ruleTag})</span></span>`
+      );
+    }
+    bdgEl.innerHTML = chips.join("");
+  }
+
   function renderHeroAndCard(card) {
     if (!card) return;
 
@@ -218,6 +266,7 @@
     $("hero-candle-utc").textContent = `T₀ UTC: ${card.candleOpenUtc}`;
 
     renderOutcomeOrFutureBanner(card);
+    renderMacroEventRow(card);
 
     const dir = card.direction || "HOLD / VETO";
     const bias = card.biasDirection || "XAU";
@@ -666,7 +715,16 @@
         const dailyTxt = !r.isA ? "HOLD" : r.dailyTargetWin ? "✓ WIN" : "✗ LOSS";
         const pnlCls = !r.isA ? "" : Number(r.execPnl) >= 0 ? "pos-res" : "neg-res";
         const pnlTxt = !r.isA ? "—" : fmtSignedUsd(r.execPnl);
-        const flipMini = r.polarityFlipped
+        const mev = r.macroEvent || {};
+        const isMacroFlip = Boolean(mev.macroFlipApplied) || String(r.polarityFlipCode || "").startsWith("M");
+        const macroIcon = isMacroFlip
+          ? `<span class="mini-macro-tag flipped ltr-num" title="${r.polarityFlipReasonFa || mev.phaseAlignmentFa || ""}">📰🔄 ${mev.eventCode || "MACRO"}</span>`
+          : mev.hasTier1Event
+          ? `<span class="mini-macro-tag ltr-num" title="${mev.phaseAlignmentFa || mev.eventNameFa || ""}">📰 ${mev.eventCode}</span>`
+          : "";
+        const flipMini = isMacroFlip
+          ? `<span class="mini-flip-tag" title="${r.polarityFlipReasonFa || "چرخش قطبیت خبر + جماتریا"}">📰🔄 چرخش قطبیت خبر + جماتریا</span>`
+          : r.polarityFlipped
           ? `<span class="mini-flip-tag" title="${r.polarityFlipReasonFa || "چرخش قطبیت هوشمند"}">🔄 چرخش قطبیت هوشمند</span>`
           : "";
         const sigTxt =
@@ -682,7 +740,7 @@
 
         return `
           <tr class="clickable-ledger-row ${selCls}" data-date="${r.date}" title="کلیک برای بارگذاری کامل رادار تاریخ ${r.date}">
-            <td><strong class="ltr-num">🔍 ${r.date}</strong></td>
+            <td><strong class="ltr-num">🔍 ${r.date}</strong> ${macroIcon}</td>
             <td>${wdFa}</td>
             <td>${mthCell}</td>
             <td><span class="ltr-num">${r.tierBadge} (${Number(r.kellyMultiplier).toFixed(2)}x)</span></td>

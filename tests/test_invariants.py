@@ -225,13 +225,14 @@ class TestXauusdFusionInvariants(unittest.TestCase):
     def test_pipeline_outputs_production_shards_and_nov2026_recovery(self) -> None:
         summary_path = os.path.join(DATA_DIR, "xauusd_backtest_summary.json")
         v50_path = os.path.join(DATA_DIR, "v50_backtest_summary.json")
+        v51_path = os.path.join(DATA_DIR, "v51_backtest_summary.json")
         preds_path = os.path.join(DATA_DIR, "xauusd_predictions_2012_2026.json")
         shard_path = os.path.join(SHARDS_DIR, "latest_xauusd_signals.json")
         hist_shard_path = os.path.join(DATA_DIR, "xauusd_history_shard.json")
 
         with open(summary_path, encoding="utf-8") as f:
             summary = json.load(f)
-        self.assertEqual(summary["version"], "5.1.0")
+        self.assertEqual(summary["version"], "5.2.0")
         self.assertEqual(summary["subset_violations"], 0)
         self.assertEqual(summary["lookahead_leakage"], 0)
         self.assertEqual(summary["distinct_8v8_rate_pct"], 100.0)
@@ -239,18 +240,26 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         self.assertGreaterEqual(summary["max_sig_sums"]["ELE_P"], 8)
         self.assertGreaterEqual(summary["max_sig_sums"]["FINAL"], 20)
         self.assertGreaterEqual(summary["max_sig_sums"]["PRIM"], 28)
+        self.assertIn("normalVsMacroSplits", summary)
+        self.assertIn("macroPolarityRules", summary)
 
-        # CRITICAL INVARIANT: 100% Zero Trade Loss across Train, Val 2025, and Blind OOS 2026 vs v5.0.0!
-        if os.path.exists(v50_path):
-            with open(v50_path, encoding="utf-8") as f:
-                v50 = json.load(f)
-            for sp in ("TRAIN", "VAL", "OOS"):
-                for tk in ("TIER_C", "TIER_B", "TIER_A", "ALL_RAW"):
-                    self.assertEqual(
-                        summary["splits"][sp][tk]["n"],
-                        v50["splits"][sp][tk]["n"],
-                        f"Trade count mismatch on {sp} {tk}",
-                    )
+        # Exact Train counts invariant: 396 / 748 / 1,743 on Train Tier C / B / A
+        self.assertEqual(summary["splits"]["TRAIN"]["TIER_C"]["n"], 396)
+        self.assertEqual(summary["splits"]["TRAIN"]["TIER_B"]["n"], 748)
+        self.assertEqual(summary["splits"]["TRAIN"]["TIER_A"]["n"], 1743)
+
+        # CRITICAL INVARIANT: 100% Zero Trade Loss (n_v52 == n_v51 == n_v50) across Train, Val 2025, and Blind OOS 2026!
+        for prev_path in (v50_path, v51_path):
+            if os.path.exists(prev_path):
+                with open(prev_path, encoding="utf-8") as f:
+                    prev_sum = json.load(f)
+                for sp in ("TRAIN", "VAL", "OOS"):
+                    for tk in ("TIER_C", "TIER_B", "TIER_A", "ALL_RAW"):
+                        self.assertEqual(
+                            summary["splits"][sp][tk]["n"],
+                            prev_sum["splits"][sp][tk]["n"],
+                            f"Trade count mismatch on {sp} {tk} vs {os.path.basename(prev_path)}",
+                        )
 
         # Verify calibration benchmarks on VAL 2025 & Blind OOS 2026
         for sp, yrs in (("VAL", 1.0), ("OOS", 0.90)):
@@ -269,12 +278,13 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         h_by_date = {hr["date"]: hr for hr in hrows}
         for hr in hrows:
             self.assertFalse((hr["isC"] and not hr["isB"]) or (hr["isB"] and not hr["isA"]))
+            self.assertIn("macroEvent", hr)
             if hr["isB"] or hr["isC"]:
                 self.assertEqual(len(hr["vetoReasons"]), 0)
             if hr.get("polarityFlipped"):
                 self.assertLess(hr["winProbPct"], 85.0)
 
-        # Verify clean recovery of 2026-11-02..2026-11-05 + 2026-08-31 runner & TP1_D fixes!
+        # Verify clean recovery of 2026-11-02..2026-11-05 + 2026-08-31 runner & TP1_D fixes (no double-flip on 2026-11-05!)
         for d_rec, exp_dir in (
             ("2026-11-02", "LONG XAU"),
             ("2026-11-03", "SHORT XAU"),
@@ -298,10 +308,12 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         self.assertTrue(r_0831["execWin"])
         self.assertGreater(r_0831["execPnl"], 10.0)
 
-        # 2026-11-05 must show Smart Polarity Inversion badge
+        # 2026-11-05 must show P1 Smart Polarity Inversion badge AND BOE_RATE macroEvent without double-flipping!
         r_1105 = h_by_date["2026-11-05"]
         self.assertTrue(r_1105["polarityFlipped"])
-        self.assertEqual(r_1105["polarityFlipBadgeFa"], "🔄 چرخش قطبیت هوشمند")
+        self.assertEqual(r_1105["polarityFlipCode"], "P1_THU_SAME_POLE_SWEEP")
+        self.assertTrue(r_1105["macroEvent"]["hasTier1Event"])
+        self.assertEqual(r_1105["macroEvent"]["eventCode"], "BOE_RATE")
 
         if os.path.exists(preds_path):
             with open(preds_path, encoding="utf-8") as f:
@@ -313,8 +325,9 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         with open(shard_path, encoding="utf-8") as f:
             shard = json.load(f)
         self.assertEqual(shard["service"], "XAUUSD-FUSION-SIGNAL")
-        self.assertEqual(shard["version"], "5.1.0")
+        self.assertEqual(shard["version"], "5.2.0")
         self.assertIn("sessionDate", shard)
+        self.assertIn("macroEvent", shard)
         self.assertIn("threeMethodComparison", shard)
         self.assertIn("geo", shard["threeMethodComparison"])
         self.assertIn("step", shard["threeMethodComparison"])
@@ -323,6 +336,61 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         self.assertEqual(len({int(round(p["level"])) for p in shard["awayUsdRoster"]}), 8)
         for tw in shard["matchedTwins"]:
             self.assertLess(tw["date"], shard["sessionDate"])
+
+    def test_macro_event_gematria_and_zero_lookahead(self) -> None:
+        import inspect
+        from src.macro_event_gematria import (
+            ENGLISH_ELEMENT_CHAR,
+            ENGLISH_GEM_CHAR,
+            get_macro_event_context,
+            hebrew_english_element_vector,
+            hebrew_english_gematria,
+            ordinal_gematria,
+        )
+
+        # 1. Exact EnglishGemChar values (A=1 .. T=400 across all 26 letters)
+        expected_gem = {
+            "A": 1, "B": 2, "G": 3, "D": 4, "E": 5, "U": 6, "V": 6, "W": 6,
+            "Z": 7, "H": 8, "I": 10, "J": 10, "Y": 10, "C": 20, "K": 20,
+            "L": 30, "M": 40, "N": 50, "S": 60, "O": 70, "X": 70, "F": 80,
+            "P": 80, "Q": 100, "R": 200, "T": 400,
+        }
+        self.assertEqual(ENGLISH_GEM_CHAR, expected_gem)
+
+        # 2. Exact EnglishElementChar sets (Fire / Earth / Air / Water across all 26 letters)
+        self.assertEqual({k for k, v in ENGLISH_ELEMENT_CHAR.items() if v == "FIRE"}, set("EIJYOSUVW"))
+        self.assertEqual({k for k, v in ENGLISH_ELEMENT_CHAR.items() if v == "EARTH"}, set("BHRT"))
+        self.assertEqual({k for k, v in ENGLISH_ELEMENT_CHAR.items() if v == "AIR"}, set("DGLQZ"))
+        self.assertEqual({k for k, v in ENGLISH_ELEMENT_CHAR.items() if v == "WATER"}, set("ACKFPMNX"))
+
+        self.assertEqual(hebrew_english_gematria("ABG"), 6)
+        self.assertEqual(hebrew_english_gematria("RT"), 600)
+        self.assertEqual(ordinal_gematria("Consumer Price Index"), 215)
+        vec_cpi = hebrew_english_element_vector("Consumer Price Index")
+        self.assertEqual(vec_cpi["dominantElement"], "FIRE")
+
+        # 3. Strict Zero Look-Ahead: get_macro_event_context accepts ONLY `date_iso` (no actual print / price args)
+        sig = inspect.signature(get_macro_event_context)
+        self.assertEqual(list(sig.parameters.keys()), ["date_iso"])
+
+        # 4. Verify scheduled events on 2026-10-28 (FOMC 14:00), 2026-11-05 (BoE 07:00), 2026-11-10 (CPI 08:30)
+        c_fomc = get_macro_event_context("2026-10-28")
+        self.assertTrue(c_fomc["hasTier1Event"])
+        self.assertEqual(c_fomc["eventCode"], "FOMC_DECISION")
+        self.assertEqual(c_fomc["releaseTimeEt"], "14:00 ET")
+        self.assertEqual(c_fomc["windowType"], "LATE_SESSION_WINDOW")
+
+        c_boe = get_macro_event_context("2026-11-05")
+        self.assertTrue(c_boe["hasTier1Event"])
+        self.assertEqual(c_boe["eventCode"], "BOE_RATE")
+        self.assertEqual(c_boe["releaseTimeEt"], "07:00 ET")
+        self.assertEqual(c_boe["windowType"], "MORNING_SHOCK_WINDOW")
+
+        c_cpi = get_macro_event_context("2026-11-10")
+        self.assertTrue(c_cpi["hasTier1Event"])
+        self.assertEqual(c_cpi["eventCode"], "US_CPI")
+        self.assertEqual(c_cpi["releaseTimeEt"], "08:30 ET")
+        self.assertEqual(c_cpi["windowType"], "MORNING_SHOCK_WINDOW")
 
     def test_by_date_past_weekend_and_future(self) -> None:
         import pickle
@@ -339,7 +407,7 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         records_by_date = pk["records_by_date"]
         sorted_dates = sorted(records_by_date.keys())
 
-        # 1. Past OOS date (2026-11-04)
+        # 1. Past OOS date (2026-11-04) + Macro dates (2026-11-10, 2026-11-05, 2026-10-28)
         past = build_signal_by_date_payload(
             "2026-11-04", records_by_date, sorted_dates, hist_map, pk["archive_full"], pk["latest_rec"], frozen_cfg
         )
@@ -347,9 +415,16 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         self.assertTrue(past["isHistorical"])
         self.assertFalse(past["isFuture"])
         self.assertEqual(past["direction"], "LONG XAU")
-        self.assertIn("threeMethodComparison", past)
+        self.assertIn("macroEvent", past)
         for tw in past["matchedTwins"]:
             self.assertLess(tw["date"], "2026-11-04")
+
+        for m_dt, exp_code in (("2026-11-10", "US_CPI"), ("2026-11-05", "BOE_RATE"), ("2026-10-28", "FOMC_DECISION")):
+            mp = build_signal_by_date_payload(
+                m_dt, records_by_date, sorted_dates, hist_map, pk["archive_full"], pk["latest_rec"], frozen_cfg
+            )
+            self.assertTrue(mp["macroEvent"]["hasTier1Event"])
+            self.assertEqual(mp["macroEvent"]["eventCode"], exp_code)
 
         # 2. Weekend auto-snap (Saturday 2026-11-14 -> Friday 2026-11-13)
         wknd = build_signal_by_date_payload(

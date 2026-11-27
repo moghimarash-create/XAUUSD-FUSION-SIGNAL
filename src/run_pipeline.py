@@ -32,6 +32,7 @@ from typing import Any
 import requests
 
 from src.astro_ephemeris_engine import evaluate_engine_a
+from src.macro_event_gematria import MACRO_POLARITY_RULES_REGISTRY, get_macro_event_context
 from src.price_roster_engine import evaluate_price_roster
 from src.sheet_archive_loader import load_gold_sheet_bundles, sync_gold_sheets_from_remote
 from src.trade_path_simulator import simulate_session_execution, summarize_dual_metrics
@@ -55,7 +56,7 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 SHARDS_DIR = os.path.join(ROOT_DIR, "shards")
 
-PIPELINE_VERSION = "5.1.0"
+PIPELINE_VERSION = "5.2.0"
 LOCKED_ANCHOR_KEY = "ANCHOR_DUAL_POLE_1800"
 LOCKED_ROUNDING_MODE = "round"
 
@@ -105,9 +106,32 @@ def _outcome_badge(row: dict[str, Any]) -> str:
     return "✓ CLOSE+" if row.get("exec_win") else "✗ CLOSE-"
 
 
+def _compact_macro_event(mev: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "hasTier1Event": bool(mev.get("hasTier1Event", False)),
+        "eventCode": str(mev.get("eventCode", "NONE")),
+        "eventNameEn": str(mev.get("eventNameEn", "")),
+        "eventNameFa": str(mev.get("eventNameFa", "")),
+        "releaseTimeEt": str(mev.get("releaseTimeEt", "")),
+        "windowType": str(mev.get("windowType", "REGULAR_SESSION")),
+        "hebrewGematria": int(mev.get("hebrewGematria", 0)),
+        "hebrewDominantElement": str(mev.get("hebrewDominantElement", "NONE")),
+        "ordinalGematria": int(mev.get("ordinalGematria", 0)),
+        "arcanaNumber": int(mev.get("arcanaNumber", 1)),
+        "arcanaElement": str(mev.get("arcanaElement", "FIRE")),
+        "releaseAstroBias": str(mev.get("releaseAstroBias", "NEUTRAL")),
+        "statusFa": str(mev.get("statusFa", "")),
+        "phaseAlignmentFa": str(mev.get("phaseAlignmentFa", "")),
+        "macroFlipApplied": bool(mev.get("macroFlipApplied", False)),
+        "macroFlipRule": str(mev.get("macroFlipRule", "")),
+        "macroFlipBadgeFa": str(mev.get("macroFlipBadgeFa", "")),
+    }
+
+
 def _build_compact_history_row(r: dict[str, Any]) -> dict[str, Any]:
     out_s = str(r.get("outcome", ""))
     hit_sl = "SL_LOSS" in out_s
+    mev = r.get("macro_event") or get_macro_event_context(r["date"])
     return {
         "date": r["date"],
         "weekday": r["weekday"],
@@ -124,6 +148,7 @@ def _build_compact_history_row(r: dict[str, Any]) -> dict[str, Any]:
         "polarityFlipCode": r.get("polarity_flip_code", ""),
         "polarityFlipBadgeFa": r.get("polarity_flip_badge_fa", ""),
         "polarityFlipReasonFa": r.get("polarity_flip_reason_fa", ""),
+        "macroEvent": _compact_macro_event(mev),
         "winProbPct": r["win_prob_pct"],
         "kellyMultiplier": r["kelly_multiplier"],
         "entryPrice": r["entry"],
@@ -354,6 +379,8 @@ def run_walk_forward_for_config(
         )
 
     splits_summary: dict[str, dict[str, Any]] = {}
+    normal_vs_macro_splits: dict[str, dict[str, Any]] = {}
+    polarity_flip_counts: dict[str, dict[str, int]] = {"TRAIN": {}, "VAL": {}, "OOS": {}}
     for sp in ("TRAIN", "VAL", "OOS"):
         sp_rows = [r for r in evaluated_rows if r["split"] == sp]
         splits_summary[sp] = {
@@ -362,6 +389,26 @@ def run_walk_forward_for_config(
             "TIER_B": _enrich_legacy_keys(summarize_dual_metrics(sp_rows, lambda r: r["is_b"])),
             "TIER_C": _enrich_legacy_keys(summarize_dual_metrics(sp_rows, lambda r: r["is_c"])),
         }
+        norm_rows = [r for r in sp_rows if not r.get("macro_event", {}).get("hasTier1Event", False)]
+        mac_rows = [r for r in sp_rows if r.get("macro_event", {}).get("hasTier1Event", False)]
+        normal_vs_macro_splits[sp] = {
+            "NORMAL_DAYS": {
+                "ALL_RAW": _enrich_legacy_keys(summarize_dual_metrics(norm_rows, lambda r: True)),
+                "TIER_A": _enrich_legacy_keys(summarize_dual_metrics(norm_rows, lambda r: r["is_a"])),
+                "TIER_B": _enrich_legacy_keys(summarize_dual_metrics(norm_rows, lambda r: r["is_b"])),
+                "TIER_C": _enrich_legacy_keys(summarize_dual_metrics(norm_rows, lambda r: r["is_c"])),
+            },
+            "MACRO_EVENT_DAYS": {
+                "ALL_RAW": _enrich_legacy_keys(summarize_dual_metrics(mac_rows, lambda r: True)),
+                "TIER_A": _enrich_legacy_keys(summarize_dual_metrics(mac_rows, lambda r: r["is_a"])),
+                "TIER_B": _enrich_legacy_keys(summarize_dual_metrics(mac_rows, lambda r: r["is_b"])),
+                "TIER_C": _enrich_legacy_keys(summarize_dual_metrics(mac_rows, lambda r: r["is_c"])),
+            },
+        }
+        for r in sp_rows:
+            if r.get("is_a") and r.get("polarity_flipped") and r.get("polarity_flip_code"):
+                fc = str(r["polarity_flip_code"])
+                polarity_flip_counts[sp][fc] = polarity_flip_counts[sp].get(fc, 0) + 1
 
     distinct_rate = round(distinct_both_ok * 100.0 / max(1, total_roster_days), 2)
     lock3_all_rate = round(
@@ -391,6 +438,8 @@ def run_walk_forward_for_config(
         "lock3_peak_rate_pct": lock3_peak_all_rate,
         "all3_agree_rate_pct": all3_all_rate,
         "veto_counts": veto_counts,
+        "polarity_flip_counts": polarity_flip_counts,
+        "normal_vs_macro_splits": normal_vs_macro_splits,
         "splits": splits_summary,
         "rows": evaluated_rows,
         "archive_full": archive_full,
@@ -407,7 +456,7 @@ def build_live_signal_card(
     spot_override: float | None = None,
 ) -> dict[str, Any]:
     """
-    Generate full diagnostic & REST-ready Live Signal Card (`v5.0.0`).
+    Generate full diagnostic & REST-ready Live Signal Card (`v5.2.0`).
     `archive.evaluate_twin_and_gaussian` strictly filters `hist_date < latest_rec["date"]`!
     """
     ea = evaluate_engine_a(
@@ -464,6 +513,7 @@ def build_live_signal_card(
         "polarityFlipCode": cba.get("polarity_flip_code", ""),
         "polarityFlipBadgeFa": cba.get("polarity_flip_badge_fa", ""),
         "polarityFlipReasonFa": cba.get("polarity_flip_reason_fa", ""),
+        "macroEvent": cba["macro_event"],
         "f1ArcanumElement": cba.get("f1_arcanum_element", ""),
         "winProbPct": cba["win_prob_pct"],
         "kellyMultiplier": cba["kelly_multiplier"],
@@ -1132,10 +1182,16 @@ def run_full_pipeline() -> dict[str, Any]:
         with open(v50_path, encoding="utf-8") as f:
             v50_splits = json.load(f).get("splits")
 
+    v51_splits = None
+    v51_path = os.path.join(DATA_DIR, "v51_backtest_summary.json")
+    if os.path.exists(v51_path):
+        with open(v51_path, encoding="utf-8") as f:
+            v51_splits = json.load(f).get("splits")
+
     summary_export = {
         "service": "XAUUSD-FUSION-SIGNAL",
         "version": PIPELINE_VERSION,
-        "versionTag": "v5.1",
+        "versionTag": "v5.2",
         "lastUpdatedUtc": now_iso,
         "locked_anchor": winner_run["anchor_key"],
         "locked_anchor_label": winner_run["anchor_label"],
@@ -1164,13 +1220,17 @@ def run_full_pipeline() -> dict[str, Any]:
         "lock3_peak_rate_pct": winner_run["lock3_peak_rate_pct"],
         "all3_agree_rate_pct": winner_run["all3_agree_rate_pct"],
         "veto_counts": winner_run["veto_counts"],
+        "polarityFlipCounts": winner_run["polarity_flip_counts"],
+        "macroPolarityRules": MACRO_POLARITY_RULES_REGISTRY,
+        "normalVsMacroSplits": winner_run["normal_vs_macro_splits"],
         "splits": winner_run["splits"],
         "versionComparison": {
             "v1": v1_splits,
             "v3": v3_splits,
             "v4": v4_splits,
             "v50": v50_splits,
-            "v51": winner_run["splits"],
+            "v51": v51_splits,
+            "v52": winner_run["splits"],
         },
     }
     with open(os.path.join(DATA_DIR, "xauusd_backtest_summary.json"), "w", encoding="utf-8") as f:
@@ -1182,6 +1242,22 @@ def run_full_pipeline() -> dict[str, Any]:
     compact_history = [_build_compact_history_row(r) for r in reversed(winner_run["rows"])]
     with open(os.path.join(DATA_DIR, "xauusd_history_shard.json"), "w", encoding="utf-8") as f:
         json.dump(compact_history, f, ensure_ascii=False)
+
+    # Also enrich `data/gold_sheet_signals.json` rows with compact zero-latency `macroEvent` telemetry
+    sig_json_path = os.path.join(DATA_DIR, "gold_sheet_signals.json")
+    if os.path.exists(sig_json_path):
+        with open(sig_json_path, encoding="utf-8") as fs:
+            sig_doc = json.load(fs)
+        pred_by_dt = {r["date"]: r for r in winner_run["rows"]}
+        for srow in sig_doc.get("rows", []):
+            sdt = str(srow.get("date", ""))
+            if sdt in pred_by_dt:
+                srow["macroEvent"] = _compact_macro_event(pred_by_dt[sdt]["macro_event"])
+            elif sdt:
+                srow["macroEvent"] = _compact_macro_event(get_macro_event_context(sdt))
+        sig_doc["version"] = PIPELINE_VERSION
+        with open(sig_json_path, "w", encoding="utf-8") as fs:
+            json.dump(sig_doc, fs, ensure_ascii=False, separators=(",", ":"))
 
     shard_payload = {
         "service": "XAUUSD-FUSION-SIGNAL",

@@ -247,12 +247,21 @@ def evaluate_xauusd_gold_cba(
     sig: dict[str, Any],
     eng_c: dict[str, Any],
     cfg: FrozenGoldCbaConfig,
+    macro_ctx: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
-    Evaluate a single trading session under `XAUUSD-FUSION-SIGNAL` (`v5.0.0`)
-    4-Method Smart Twin Selector + `8v8` S/R Roster Fusion + 6-Layer Veto Shield.
-    Hard-asserts `subsetViolations == 0`.
+    Evaluate a single trading session under `XAUUSD-FUSION-SIGNAL` (`v5.2.0`)
+    4-Method Smart Twin Selector + `8v8` S/R Roster Fusion + 6-Layer Veto Shield
+    + Zero-Look-Ahead Macro-Event Gematria & Release-Minute Ephemeris Polarity Layer.
+    Hard-asserts `subsetViolations == 0` and `0` trade loss (`n_v52 == n_v51 == n_v50`).
     """
+    if macro_ctx is None:
+        from src.macro_event_gematria import get_macro_event_context
+
+        macro_ev = get_macro_event_context(str(rec["date"]))
+    else:
+        macro_ev = dict(macro_ctx)
+
     z_a = (float(eng_a["score_a"]) - cfg.mean_a) / cfg.std_a
     z_b = (float(eng_b["score_b"]) - cfg.mean_b) / cfg.std_b
     z_c = (float(eng_c["score_c"]) - cfg.mean_c) / cfg.std_c
@@ -383,8 +392,8 @@ def evaluate_xauusd_gold_cba(
     atr14 = float(rec["atr14"])
     all3_agree = bool(eng_c.get("all3_agree", False))
 
-    # Post-Gate Smart Polarity Inversion Layer (`v5.1.0` — 0 trades dropped, 100% tier count preservation):
-    # Protects ultra-high `all3Agree + winProbPct >= 88.5%` locks while flipping Train-validated inversion traps.
+    # Unified Single-Pass Post-Gate Smart Polarity Inversion Layer (`v5.2.0` — 0 trades dropped, `n_v52 == n_v51 == n_v50`):
+    # Priority chain `P1 -> P2 -> P3 -> M1 -> M2` ensures already-flipped sessions (e.g., 2026-11-05 Thu BoE) NEVER double-flip!
     if is_a and not (all3_agree and win_prob_pct >= 88.5):
         fh_val = int(eng_a["d_ctx"]["F3_HOME"])
         fa_val = int(eng_a["d_ctx"]["F3_AWAY"])
@@ -422,6 +431,35 @@ def evaluate_xauusd_gold_cba(
         else:
             cond_p3 = False
 
+        # Enforce V6_COUNTER_MACRO_TREND zero-veto contract on Tier B/C:
+        # never flip a pro-macro Tier B/C trade into an unvetoed counter-macro-trend direction, and protect elite Tier C locks.
+        v6_tier_bc_clean = (not is_c) and not (is_b and macro_pro)
+
+        # M1 (Train-Calibrated 2012–2024): FOMC Day 1 Pre-Meeting Buy-Side Liquidity Sweep (`LONG_XAU -> SHORT_XAU`)
+        cond_m1 = (
+            (not polarity_flipped)
+            and v6_tier_bc_clean
+            and ("FOMC_DAY1" in macro_ev.get("allEventCodes", []))
+            and (raw_dir == "XAU")
+            and (not all3_agree)
+        )
+
+        # M2 (Train-Calibrated 2012–2024): Morning Shock Window (`07:00–09:45 ET`, strictly excluding `14:00 ET` FOMC)
+        #    Volatile FIRE/AIR Shock Clash (`>=3/5` volatile votes + Release-Minute Astro Bias & Engine A oppose `raw_dir`)
+        rel_bias = str(macro_ev.get("releaseAstroBias", "NEUTRAL"))
+        cond_m2 = (
+            (not polarity_flipped)
+            and v6_tier_bc_clean
+            and bool(macro_ev.get("hasTier1Event", False))
+            and (str(macro_ev.get("windowType", "")) == "MORNING_SHOCK_WINDOW")
+            and (not bool(macro_ev.get("hasFomcDecisionOrMinutes", False)))
+            and (not all3_agree)
+            and (int(macro_ev.get("volatileVotes", 0)) >= 3)
+            and (rel_bias in ("XAU", "USD"))
+            and (rel_bias != raw_dir)
+            and ((raw_dir == "XAU" and z_a < 0.0) or (raw_dir == "USD" and z_a > 0.0))
+        )
+
         if cond_p1:
             raw_dir = "XAU"
             polarity_flipped = True
@@ -446,6 +484,29 @@ def evaluate_xauusd_gold_cba(
             polarity_flip_reason_fa = (
                 f"🔄 چرخش قطبیت هوشمند (P3): برتری سنگین برآیند دلاری همزادها ({net_usd:+.1f}$) و راستر ۸×۸ بر شمارش خام"
             )
+        elif cond_m1:
+            raw_dir = "USD"
+            polarity_flipped = True
+            polarity_flip_code = "M1_FOMC_DAY1_LIQUIDITY_SWEEP"
+            polarity_flip_badge_fa = "📰🔄 چرخش قطبیت خبر + جماتریا"
+            polarity_flip_reason_fa = (
+                "📰🔄 چرخش قطبیت خبر + جماتریا (M1_FOMC_DAY1_LIQUIDITY_SWEEP): جاروی نقدینگی خرید روز اول نشست فدرال رزرو (09:00 ET)"
+            )
+            macro_ev["macroFlipApplied"] = True
+            macro_ev["macroFlipRule"] = "M1_FOMC_DAY1_LIQUIDITY_SWEEP"
+            macro_ev["macroFlipBadgeFa"] = "📰🔄 چرخش قطبیت خبر + جماتریا"
+        elif cond_m2:
+            raw_dir = rel_bias
+            polarity_flipped = True
+            polarity_flip_code = "M2_MORNING_SHOCK_ELEMENT_CLASH"
+            polarity_flip_badge_fa = "📰🔄 چرخش قطبیت خبر + جماتریا"
+            polarity_flip_reason_fa = (
+                f"📰🔄 چرخش قطبیت خبر + جماتریا (M2_MORNING_SHOCK_ELEMENT_CLASH): تضاد شوک صبحگاهی {macro_ev.get('eventCode')} "
+                f"({macro_ev.get('releaseTimeEt')}) با جهت اولیه (همفاز با {'طلا' if rel_bias == 'XAU' else 'USD'})"
+            )
+            macro_ev["macroFlipApplied"] = True
+            macro_ev["macroFlipRule"] = "M2_MORNING_SHOCK_ELEMENT_CLASH"
+            macro_ev["macroFlipBadgeFa"] = "📰🔄 چرخش قطبیت خبر + جماتریا"
 
     if polarity_flipped and win_prob_pct >= 85.0:
         win_prob_pct = 84.5
@@ -457,6 +518,17 @@ def evaluate_xauusd_gold_cba(
     kelly_mult = 1.20 if is_c else (1.00 if is_b else (0.80 if is_a else 0.0))
 
     final_dir = pick if pick else raw_dir
+    if macro_ev.get("hasTier1Event"):
+        rel_b = macro_ev.get("releaseAstroBias", "NEUTRAL")
+        status_lbl = "همفاز با طلا" if rel_b == "XAU" else ("همفاز با USD" if rel_b == "USD" else "متعادل / خنثی")
+        macro_ev["statusFa"] = status_lbl
+        macro_ev["phaseAlignmentFa"] = (
+            f"📅 رویداد کلان امروز: {macro_ev['eventNameFa']} ({macro_ev['releaseTimeEt']}) • "
+            f"جماتریای عبری: {macro_ev['hebrewGematria']} ({macro_ev['hebrewDominantElement']}) / "
+            f"ابجد آرکانا: {macro_ev['ordinalGematria']} → #{macro_ev['arcanaNumber']} ({macro_ev['arcanaElement']}) • "
+            f"وضعیت: {status_lbl}"
+        )
+
     q25_a, q50_a, q75_a = eng_c["up_tp_atrs"] if final_dir == "XAU" else eng_c["dn_tp_atrs"]
     lvls = compute_adaptive_causal_levels(
         direction=final_dir,
@@ -495,6 +567,7 @@ def evaluate_xauusd_gold_cba(
         "polarity_flip_code": polarity_flip_code,
         "polarity_flip_badge_fa": polarity_flip_badge_fa,
         "polarity_flip_reason_fa": polarity_flip_reason_fa,
+        "macro_event": macro_ev,
         "action": action,
         "is_c": is_c,
         "is_b": is_b,

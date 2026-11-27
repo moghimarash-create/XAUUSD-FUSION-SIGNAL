@@ -40,7 +40,7 @@ SUMMARY_PATH = os.path.join(DATA_DIR, "xauusd_backtest_summary.json")
 HISTORY_SHARD_PATH = os.path.join(DATA_DIR, "xauusd_history_shard.json")
 ARCHIVE_PKL_PATH = os.path.join(DATA_DIR, "xauusd_twin_archive.pkl")
 
-SERVICE_VERSION = "5.1.0"
+SERVICE_VERSION = "5.2.0"
 
 _STATE_LOCK = threading.Lock()
 _CACHE: dict[str, Any] = {
@@ -227,9 +227,9 @@ def _ensure_engine_bundle() -> dict[str, Any]:
 
 
 app = FastAPI(
-    title="XAUUSD-FUSION-SIGNAL v5.0 Microservice",
+    title="XAUUSD-FUSION-SIGNAL v5.2 Microservice",
     version=SERVICE_VERSION,
-    description="True Sheet-Backed 12-Col Archive + 4-Method Smart Twin Selector (LOCK3/GEO/STEP/LOCK2) + 8v8 S/R Roster Fusion",
+    description="True Sheet-Backed 12-Col Archive + 4-Method Smart Twin Selector + 8v8 S/R Roster + Macro-Event Gematria & Release Ephemeris",
 )
 
 app.add_middleware(
@@ -263,6 +263,7 @@ def api_health() -> dict[str, Any]:
 
 
 @app.get("/api/signals/today")
+@app.get("/api/signals/latest")
 def api_signals_today() -> dict[str, Any]:
     with _STATE_LOCK:
         payload = _CACHE["today"]
@@ -283,6 +284,7 @@ def api_signals_by_date(
     Dynamically evaluate ANY requested date (`2012-01-01` .. `2035-12-31`) with strict `hist_date < sessionDate`.
     """
     from src.astro_ephemeris_engine import _DATE_CTX_CACHE, _SNAP_CACHE
+    from src.macro_event_gematria import _MACRO_CTX_CACHE
     from src.price_roster_engine import _POLE_RES_CACHE
     from src.run_pipeline import build_signal_by_date_payload
 
@@ -312,6 +314,8 @@ def api_signals_by_date(
             _DATE_CTX_CACHE.clear()
         if len(_POLE_RES_CACHE) > 512:
             _POLE_RES_CACHE.clear()
+        if len(_MACRO_CTX_CACHE) > 512:
+            _MACRO_CTX_CACHE.clear()
 
     res["rssMb"] = get_rss_mb()
     return res
@@ -355,9 +359,11 @@ def api_signals_history(
             continue
 
         if q_s:
+            mev = r.get("macroEvent") or {}
             hay = (
                 f"{r.get('date', '')} {r.get('weekday', '')} {r.get('direction', '')} "
-                f"{r.get('outcomeBadge', '')} {r.get('selectedMethod', '')} {r.get('consensusBadgeFa', '')}"
+                f"{r.get('outcomeBadge', '')} {r.get('selectedMethod', '')} {r.get('consensusBadgeFa', '')} "
+                f"{r.get('polarityFlipCode', '')} {mev.get('eventCode', '')} {mev.get('eventNameEn', '')} {mev.get('eventNameFa', '')}"
             ).lower()
             if q_s not in hay:
                 continue
@@ -461,6 +467,7 @@ def api_refresh() -> dict[str, Any]:
     atomically refresh `shards/latest_xauusd_signals.json`, and purge transient caches (`RSS < 150 MiB`).
     """
     from src.astro_ephemeris_engine import _DATE_CTX_CACHE, _SNAP_CACHE
+    from src.macro_event_gematria import _MACRO_CTX_CACHE
     from src.price_roster_engine import _POLE_RES_CACHE
     from src.run_pipeline import refresh_live_signal_shard_only
 
@@ -477,6 +484,7 @@ def api_refresh() -> dict[str, Any]:
         _SNAP_CACHE.clear()
         _DATE_CTX_CACHE.clear()
         _POLE_RES_CACHE.clear()
+        _MACRO_CTX_CACHE.clear()
         gc.collect()
 
     return {
