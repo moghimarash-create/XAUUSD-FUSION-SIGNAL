@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>رادار هوشمند طلا — XAUUSD-FUSION-SIGNAL v4.2</title>
+  <title>رادار هوشمند طلا — XAUUSD-FUSION-SIGNAL v5.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -20,11 +20,10 @@
         <div class="brand-copy">
           <div class="brand-title-row">
             <h1 class="brand-title">رادار هوشمند طلا — <span class="ltr-num">XAUUSD-FUSION-SIGNAL</span></h1>
-            <span class="version-pill ltr-num" id="hdr-version">v4.2.0</span>
+            <span class="version-pill ltr-num" id="hdr-version">v5.0.0</span>
           </div>
           <p class="brand-subtitle">
-            موتور همزاد-محور نجومی، عنصری و رمل بدون نشت آینده • لنگر دوقطبی
-            <span class="ltr-num">LBMA London (51.51°N) ↔ COMEX NY (40.71°N) @ 18:00 ET</span>
+            آرشیو واقعی ۴,۷۰۵ ردیفه شیت طلا (<span class="ltr-num">2012–2027</span>) • انتخابگر هوشمند ۳ روشه (<span class="ltr-num">LOCK3 / GEO / STEP</span>) • راستر <span class="ltr-num">8v8 @ 18:00 ET</span>
           </p>
         </div>
       </div>
@@ -60,7 +59,7 @@
 
         <button type="button" class="btn-refresh" id="btn-live-refresh">
           <span class="refresh-icon" id="refresh-icon">🔄</span>
-          <span>بروزرسانی زنده قیمت</span>
+          <span>بروزرسانی زنده و همگام‌سازی شیت</span>
         </button>
       </div>
     </div>
@@ -72,7 +71,7 @@
           <span class="inv-chip ok" id="inv-subset">✓ سلسله‌مراتب C ⊂ B ⊂ A (خطا: ۰)</span>
           <span class="inv-chip ok" id="inv-leakage">✓ نشت داده آینده: ۰ (Zero-Leakage)</span>
           <span class="inv-chip ok" id="inv-distinct">✓ تمایز راستر ۸×۸: ۱۰۰٪</span>
-          <span class="inv-chip ok" id="inv-pricefree">✓ امضای ۱۲ ستونی مستقل از قیمت</span>
+          <span class="inv-chip ok" id="inv-pricefree">✓ ماتریس غنی شیت ۱۲ ستونی (PRIM ~32)</span>
         </div>
         <div class="sys-telemetry ltr-num">
           <span id="hdr-rss">RSS: -- MiB</span>
@@ -92,7 +91,7 @@
       <div class="bench-card" id="bench-oos-2026">
         <div class="bench-header">
           <span class="bench-tag gold">آزمون کور خارج از نمونه (Blind OOS 2026 YTD)</span>
-          <span class="bench-sub">مسیر ۱ ساعته واقعی (TP1-Before-SL)</span>
+          <span class="bench-sub">برد هدف روزانه (KXGOLDPERP) | استاپ پله‌ای ۰.۸۵ ATR</span>
         </div>
         <div class="bench-grid" id="bench-oos-grid"></div>
       </div>
@@ -100,7 +99,7 @@
       <div class="bench-card" id="bench-val-2025">
         <div class="bench-header">
           <span class="bench-tag emerald">اعتبارسنجی روند بانک‌های مرکزی (Val 2025)</span>
-          <span class="bench-sub">مسیر ۱ ساعته واقعی (TP1-Before-SL)</span>
+          <span class="bench-sub">برد هدف روزانه (KXGOLDPERP) | استاپ پله‌ای ۰.۸۵ ATR</span>
         </div>
         <div class="bench-grid" id="bench-val-grid"></div>
       </div>
@@ -108,7 +107,7 @@
       <div class="bench-card" id="bench-train-1224">
         <div class="bench-header">
           <span class="bench-tag slate">دوره کالیبراسیون پایه (Train 2012–2024)</span>
-          <span class="bench-sub">۱۳ سال داده روزانه محافظه‌کارانه</span>
+          <span class="bench-sub">۱۳ سال داده روزانه فریز شده بدون نشت</span>
         </div>
         <div class="bench-grid" id="bench-train-grid"></div>
       </div>
@@ -147,7 +146,7 @@
 
           <div class="prob-meter-wrap">
             <div class="prob-meter-labels">
-              <span>احتمال برد کالیبره‌شده (Win Prob)</span>
+              <span>احتمال برد هدف روزانه (Daily Target Win Prob)</span>
               <strong class="ltr-num" id="hero-win-prob">--%</strong>
             </div>
             <div class="prob-track">
@@ -165,7 +164,7 @@
               <strong class="vkpi-val ltr-num" id="hero-atr14">$--</strong>
             </div>
             <div class="vkpi">
-              <span class="vkpi-lbl">نسبت ریوارد به ریسک</span>
+              <span class="vkpi-lbl">ریوارد میانه به ریسک (TP2/SL)</span>
               <strong class="vkpi-val ltr-num" id="hero-rr">--</strong>
             </div>
             <div class="vkpi">
@@ -178,22 +177,22 @@
         <!-- Causal Entry / SL / TP1 / TP2 / TP3 Ladder -->
         <div class="ladder-box">
           <div class="subbox-header">
-            <h3>نردبان سطوح معاملاتی علیتی (محاسبه‌شده در <span class="ltr-num">T₀</span>)</h3>
-            <span class="subbox-note">همگام با صدک‌های ATR همزادها</span>
+            <h3>نردبان سطوح علیتی <span class="ltr-num">KXGOLDPERP</span> (محاسبه در <span class="ltr-num">T₀</span>)</h3>
+            <span class="subbox-note">صدک‌های واقعی همزادهای برنده (<span class="ltr-num">Q25 / Q50 / Q75</span>)</span>
           </div>
           <div class="price-ladder" id="hero-price-ladder">
             <div class="ladder-row tp3">
-              <span class="ladder-tag">هدف سوم (TP3 • P90)</span>
+              <span class="ladder-tag">هدف سوم (TP3 • Q75 Runner)</span>
               <span class="ladder-delta ltr-num" id="lvl-tp3-delta">--</span>
               <strong class="ladder-price ltr-num" id="lvl-tp3">$--</strong>
             </div>
             <div class="ladder-row tp2">
-              <span class="ladder-tag">هدف دوم (TP2 • P75)</span>
+              <span class="ladder-tag">هدف دوم (TP2 • Q50 میانه همزاد)</span>
               <span class="ladder-delta ltr-num" id="lvl-tp2-delta">--</span>
               <strong class="ladder-price ltr-num" id="lvl-tp2">$--</strong>
             </div>
             <div class="ladder-row tp1">
-              <span class="ladder-tag">هدف اول (TP1 • معیار برد)</span>
+              <span class="ladder-tag">هدف اول (TP1 • Q25 نقد روزانه)</span>
               <span class="ladder-delta ltr-num" id="lvl-tp1-delta">--</span>
               <strong class="ladder-price ltr-num" id="lvl-tp1">$--</strong>
             </div>
@@ -203,7 +202,7 @@
               <strong class="ladder-price ltr-num" id="lvl-entry">$--</strong>
             </div>
             <div class="ladder-row sl">
-              <span class="ladder-tag">حد ضرر ابطال ساختار (SL)</span>
+              <span class="ladder-tag">حد ضرر پله‌ای (SL = 0.85 ATR → BE)</span>
               <span class="ladder-delta ltr-num" id="lvl-sl-delta">--</span>
               <strong class="ladder-price ltr-num" id="lvl-sl">$--</strong>
             </div>
@@ -246,7 +245,7 @@
       <!-- 6-Layer Veto Shield Pills -->
       <div class="veto-shield-wrap">
         <div class="veto-shield-header">
-          <h3>سپر حفاظتی ۶ لایه (6-Layer Veto Shield)</h3>
+          <h3>سپر حفاظتی ۶ لایه (بدون وتوی کور Zero ELE-P در روندها)</h3>
           <span class="veto-summary-badge" id="veto-summary-badge">--</span>
         </div>
         <div class="veto-pills-grid" id="hero-veto-grid"></div>
@@ -343,21 +342,33 @@
       </div>
     </section>
 
-    <!-- SECTION 3: 12-COL TWIN LOCK & DECAN EXPLORER -->
+    <!-- SECTION 3: 3-METHOD COMPARISON BAR + 12-COL SHEET TWIN EXPLORER -->
     <section class="panel" id="section-twins">
       <div class="panel-header">
         <div>
-          <span class="section-eyebrow">بخش سوم • موتور غیرپارامتریک همزادهای نجومی</span>
-          <h2 class="panel-title">کاوشگر همزادهای ۱۲ ستونی و قفل سه‌لایه (<span class="ltr-num">LOCK3_PEAK</span>)</h2>
+          <span class="section-eyebrow">بخش سوم • آرشیو شیت طلا و انتخابگر هوشمند ۳ روشه (pickBestSmartNarrowing)</span>
+          <h2 class="panel-title">مقایسه هوشمند ۳ روش همزادیابی (<span class="ltr-num">اول GEO | گام‌به‌گام | 🔒 قفل سه‌لایه</span>)</h2>
         </div>
         <div class="twin-lock-badges" id="twin-header-badges"></div>
+      </div>
+
+      <!-- NEW v5.0.0: 3-Method Comparison Bar (اول GEO | گام‌به‌گام | 🔒 قفل سه‌لایه + حالت ۱/۲/۳) -->
+      <div class="method3-comparison-wrap" id="three-method-bar">
+        <div class="method3-consensus-banner" id="method3-consensus-banner">
+          <div class="m3-banner-right">
+            <span class="m3-mode-pill" id="m3-mode-pill">حالت ۱: اجماع کامل ۳ روش</span>
+            <span class="m3-selected-pill" id="m3-selected-pill">روش منتخب: 🔒 قفل سه‌لایه</span>
+          </div>
+          <span class="m3-rule-reason" id="m3-rule-reason">--</span>
+        </div>
+        <div class="method3-cards-grid" id="method3-cards-grid"></div>
       </div>
 
       <div class="twins-top-grid">
         <!-- 12-Column Matrix + Geomancy Parity -->
         <div class="sig12-card">
           <div class="subbox-header">
-            <h3>ماتریس ۱۲ ستونی خالص آسمانی (بدون وابستگی به مقیاس قیمت دلاری)</h3>
+            <h3>ماتریس غنی ۱۲ ستونی شیت طلا (<span id="sig-source-lbl">شیت رسمی ۲۰۱۲–۲۰۲۷</span>)</h3>
             <span class="ltr-num" id="sig-zero-elep">zeroElepCnt: --</span>
           </div>
 
@@ -394,8 +405,8 @@
         <!-- Twin Vote & Recency-ATR Dominance Card -->
         <div class="twin-vote-card">
           <div class="subbox-header">
-            <h3>اجماع همزادهای تاریخی با وزن‌دهی زمانی و دامنه ATR</h3>
-            <span class="ltr-num">exp(-years / 6.0) × ATR_Move</span>
+            <h3>اجماع روش منتخب و صدک‌های حرکتی همزادها</h3>
+            <span class="ltr-num" id="tw-selected-tag">LOCK3</span>
           </div>
 
           <div class="twin-tally-big">
@@ -405,7 +416,7 @@
             </div>
             <div class="tally-vs">
               <span class="ltr-num" id="tw-raw-pct">--%</span>
-              <small>خام</small>
+              <small>اکثریت</small>
             </div>
             <div class="tally-side bear">
               <span class="tally-lbl">همزادهای نزولی (USD)</span>
@@ -479,8 +490,8 @@
     <section class="panel" id="section-ledger">
       <div class="panel-header">
         <div>
-          <span class="section-eyebrow">بخش چهارم • شفافیت کامل حسابرسی معاملات (کلیک روی هر ردیف = بارگذاری کامل رادار آن روز)</span>
-          <h2 class="panel-title">آرشیو نتایج و جدول اثبات عملکرد — <span class="ltr-num">2025 Val &amp; 2026 Blind OOS</span></h2>
+          <span class="section-eyebrow">بخش چهارم • شفافیت کامل دو معیار برد (کلیک روی هر ردیف = بارگذاری کامل رادار آن روز)</span>
+          <h2 class="panel-title">آرشیو نتایج و اثبات عملکرد — <span class="ltr-num">KXGOLDPERP Daily Win% &amp; Stepped SL</span></h2>
         </div>
         <span class="ledger-count-badge" id="ledger-count-badge">-- رکورد</span>
       </div>
@@ -521,31 +532,31 @@
 
           <label class="ctrl-field search-field">
             <span>جستجو:</span>
-            <input type="search" id="flt-search" placeholder="مثلاً 2026-10 یا TP3..." />
+            <input type="search" id="flt-search" placeholder="مثلاً 2026-11 یا LOCK3..." />
           </label>
         </div>
       </div>
 
-      <!-- Dynamic Filtered KPI Summary Cards -->
+      <!-- Dynamic Filtered KPI Summary Cards (Side-by-Side Dual Win Metrics!) -->
       <div class="ledger-kpi-strip" id="ledger-kpi-strip">
         <div class="lkpi-card">
           <span class="lkpi-lbl">معاملات فعال فیلترشده</span>
           <strong class="lkpi-val ltr-num" id="lkpi-trades">--</strong>
         </div>
         <div class="lkpi-card highlight-gold">
-          <span class="lkpi-lbl">برد اجرایی (TP1-Before-SL)</span>
+          <span class="lkpi-lbl">برد روزانه بدون استاپ تنگ (KXGOLDPERP)</span>
+          <strong class="lkpi-val ltr-num" id="lkpi-daily-wr">--%</strong>
+        </div>
+        <div class="lkpi-card highlight-emerald">
+          <span class="lkpi-lbl">برد اجرایی با استاپ پله‌ای (0.85 ATR)</span>
           <strong class="lkpi-val ltr-num" id="lkpi-exec-wr">--%</strong>
         </div>
         <div class="lkpi-card">
-          <span class="lkpi-lbl">برد کندل روزانه (Raw Close)</span>
-          <strong class="lkpi-val ltr-num" id="lkpi-raw-wr">--%</strong>
-        </div>
-        <div class="lkpi-card">
-          <span class="lkpi-lbl">ضریب سود (Profit Factor)</span>
+          <span class="lkpi-lbl">ضریب سود (روزانه / پله‌ای)</span>
           <strong class="lkpi-val ltr-num" id="lkpi-pf">--</strong>
         </div>
         <div class="lkpi-card">
-          <span class="lkpi-lbl">امید ریاضی هر اونس</span>
+          <span class="lkpi-lbl">امید ریاضی استاپ پله‌ای ($/oz)</span>
           <strong class="lkpi-val ltr-num" id="lkpi-exp">$--</strong>
         </div>
         <div class="lkpi-card">
@@ -561,16 +572,16 @@
             <tr>
               <th>تاریخ سشن</th>
               <th>روز</th>
-              <th>بازه</th>
-              <th>رژیم کلان</th>
+              <th>روش و حالت اجماع</th>
               <th>تیِر و کلی</th>
               <th>سیگنال</th>
               <th>احتمال</th>
               <th>ورود / SL ($)</th>
-              <th>اهداف TP1 / TP2 / TP3 ($)</th>
+              <th>اهداف Q25 / Q50 / Q75 ($)</th>
               <th>حرکت واقعی بازار</th>
-              <th>نتیجه اصابت</th>
-              <th>سود/زیان اجرایی</th>
+              <th>برد روزانه (بدون SL تنگ)</th>
+              <th>نتیجه پله‌ای</th>
+              <th>سود/زیان پله‌ای</th>
             </tr>
           </thead>
           <tbody id="tbody-history-ledger"></tbody>
@@ -581,7 +592,7 @@
 
   <footer class="site-footer">
     <div class="container footer-inner">
-      <span>سامانه <strong class="ltr-num">XAUUSD-FUSION-SIGNAL v4.2.0</strong> • معماری هم‌ریخت با <span class="ltr-num">NBA-FUSION-SIGNAL</span></span>
+      <span>سامانه <strong class="ltr-num">XAUUSD-FUSION-SIGNAL v5.0.0</strong> • آرشیو شیت ۱۲ ستونی + انتخابگر هوشمند <span class="ltr-num">LOCK3/GEO/STEP</span></span>
       <span class="ltr-num">DEG1=107° CANCER • DEG2=147° LEO • HOME=77° GEMINI • AWAY=70° GEMINI</span>
     </div>
   </footer>

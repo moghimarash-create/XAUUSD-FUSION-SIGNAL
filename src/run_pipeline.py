@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-Master Zero-Leakage Walk-Forward Pipeline, Shard Exporter & Benchmark Runner
-for `XAUUSD-FUSION-SIGNAL` (`v4.0.0` Twin-First Production Engine).
+Master Zero-Leakage Walk-Forward Pipeline, Sheet Sync, Shard Exporter & Benchmark Runner
+for `XAUUSD-FUSION-SIGNAL` (`v5.0.0` True Sheet-Backed 4-Method Smart Twin Selector + `8v8` Roster Fusion).
 
 Executes:
-1. Locked Phase 1 Winner (`ANCHOR_DUAL_POLE_1800` + `round(P) % 360`) Zero-Leakage Walk-Forward:
+1. Authentic 4,705-row Google Sheet Gold Archive (`data/gold_sheet_history.json` & `data/gold_sheet_signals.json`)
+   + Multi-Planet (`12 planets × 24 aspects` + `107°/147°/77°/70°` + `36-Decan`) fallback beyond `2027-02-26`.
+2. Locked Dual-Pole Anchor (`ANCHOR_DUAL_POLE_1800` + `round(P) % 360`) Zero-Leakage Walk-Forward:
    - LBMA London (`51.5142, -0.0885`) for `HOME XAU` vs COMEX New York (`40.7143, -74.0139`) for `AWAY USD`
      at `18:00:00 America/New_York` on `D-1`.
-2. 100% Price-Free Pure Astro-Arcana-Decan `12-Col Signature` + ATR-Normalized Recency-Weighted
-   (`exp(-years_ago / 6.0)`) Non-Parametric Twin Consensus + 6-Layer Veto Shield (`V6_COUNTER_MACRO_TREND`).
-3. Strict Train-Only (`2012–2024`) Calibration & Freeze (`Val 2025` and `Blind OOS 2026` untouched).
-4. Side-by-Side `v1 vs v3 vs v4` Comparison across `Train`, `Val`, and `Blind OOS` (Raw Close & `1h` `TP1-Before-SL`).
-5. Exports production shards:
+3. Exact 4-Method Smart Twin Selector (`LOCK3`, `GEO`, `STEP`, `LOCK2` + `pickBestSmartNarrowing`)
+   strictly on `hist_date < target_date`, fused with `8v8` Distinct S/R Price Roster + `Q25/Q50/Q75` Twin Targets.
+4. Strict Train-Only (`2012–2024`) Calibration & Freeze (`Val 2025` and `Blind OOS 2026` untouched).
+5. Exports production shards (`v5.0.0`):
    - `shards/latest_xauusd_signals.json`
    - `data/xauusd_history_shard.json`
    - `data/xauusd_backtest_summary.json`
@@ -19,7 +20,6 @@ Executes:
 """
 from __future__ import annotations
 
-import copy
 from dataclasses import asdict
 import datetime
 import json
@@ -32,13 +32,8 @@ from typing import Any
 import requests
 
 from src.astro_ephemeris_engine import evaluate_engine_a
-from src.data_loader import (
-    DATA_DIR,
-    build_zero_leakage_daily_records,
-    fetch_and_cache_market_data,
-    group_1h_bars_by_session,
-)
 from src.price_roster_engine import evaluate_price_roster
+from src.sheet_archive_loader import load_gold_sheet_bundles, sync_gold_sheets_from_remote
 from src.trade_path_simulator import simulate_session_execution, summarize_dual_metrics
 from src.twin_lock_engine import HistoricalTwinArchive, build_day_12col_signature
 from src.xauusd_config import (
@@ -57,8 +52,10 @@ from src.xauusd_gold_cba_engine import (
 )
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DATA_DIR = os.path.join(ROOT_DIR, "data")
 SHARDS_DIR = os.path.join(ROOT_DIR, "shards")
 
+PIPELINE_VERSION = "5.0.0"
 LOCKED_ANCHOR_KEY = "ANCHOR_DUAL_POLE_1800"
 LOCKED_ROUNDING_MODE = "round"
 
@@ -71,21 +68,24 @@ def _roster_is_distinct_8(roster: dict[str, Any]) -> bool:
 def _enrich_legacy_keys(dual_m: dict[str, Any]) -> dict[str, Any]:
     return {
         **dual_m,
-        "wins": dual_m["raw_wins"],
-        "losses": dual_m["raw_losses"],
-        "win_rate": dual_m["raw_win_rate"],
-        "pf": dual_m["raw_pf"],
-        "expectancy_usd": dual_m["raw_exp_usd"],
+        "wins": dual_m["daily_wins"],
+        "losses": dual_m["daily_losses"],
+        "win_rate": dual_m["daily_win_rate"],
+        "pf": dual_m["daily_pf"],
+        "expectancy_usd": dual_m["daily_exp_usd"],
     }
 
 
-def _verify_price_free_twin_signature(sample_date: str = "2026-11-26") -> bool:
-    """Verify that changing Gold price from $1,150 to $4,350 produces bit-for-bit identical 12-col signature."""
-    ea_1 = evaluate_engine_a(sample_date, 1150.25, 1142.80, 92.40, LOCKED_ANCHOR_KEY, LOCKED_ROUNDING_MODE)
-    ea_2 = evaluate_engine_a(sample_date, 4350.90, 4295.10, 108.75, LOCKED_ANCHOR_KEY, LOCKED_ROUNDING_MODE)
-    sig_1 = build_day_12col_signature(ea_1, None)
-    sig_2 = build_day_12col_signature(ea_2, None)
-    return bool(sig_1["price_free"] and sig_1 == sig_2)
+def _verify_price_free_twin_signature() -> bool:
+    """Verify `$1,150` vs `$4,350` produces bit-for-bit identical 12-col signature on both Sheet and Fallback dates."""
+    for sample_date in ("2026-11-26", "2028-05-10"):
+        ea_1 = evaluate_engine_a(sample_date, 1150.25, 1142.80, 92.40, LOCKED_ANCHOR_KEY, LOCKED_ROUNDING_MODE)
+        ea_2 = evaluate_engine_a(sample_date, 4350.90, 4295.10, 108.75, LOCKED_ANCHOR_KEY, LOCKED_ROUNDING_MODE)
+        sig_1 = build_day_12col_signature(ea_1, {"dummy_price": 1150.25})
+        sig_2 = build_day_12col_signature(ea_2, {"dummy_price": 4350.90})
+        if not (sig_1["price_free"] and sig_1 == sig_2):
+            return False
+    return True
 
 
 def _outcome_badge(row: dict[str, Any]) -> str:
@@ -97,6 +97,8 @@ def _outcome_badge(row: dict[str, Any]) -> str:
         return "✓ TP2"
     if row.get("hit_tp1_clean"):
         return "✓ TP1"
+    if row.get("hit_tp1_any") and row.get("daily_target_win"):
+        return "✓ TP1 (Daily)"
     out_s = str(row.get("outcome", ""))
     if "SL_LOSS" in out_s:
         return "✗ SL"
@@ -135,11 +137,14 @@ def _build_compact_history_row(r: dict[str, Any]) -> dict[str, Any]:
         "actualClose": r["actual_close"],
         "actualDir": r["actual_dir"],
         "actualMove": r["actual_move"],
+        "dailyTargetWin": bool(r.get("daily_target_win", r["raw_close_win"])),
+        "dailyTargetPnl": r.get("daily_target_pnl", r["raw_close_pnl"]),
         "execWin": bool(r["exec_win"]),
         "execPnl": r["exec_pnl"],
         "rawCloseWin": bool(r["raw_close_win"]),
         "rawClosePnl": r["raw_close_pnl"],
-        "hitTp1": bool(r.get("hit_tp1_clean", False)),
+        "hitTp1": bool(r.get("hit_tp1_clean", False) or r.get("hit_tp1_any", False)),
+        "hitTp1Clean": bool(r.get("hit_tp1_clean", False)),
         "hitTp2": bool(r.get("hit_tp2_clean", False)),
         "hitTp3": bool(r.get("hit_tp3_clean", False)),
         "hitSl": hit_sl,
@@ -147,6 +152,11 @@ def _build_compact_history_row(r: dict[str, Any]) -> dict[str, Any]:
         "outcomeBadge": _outcome_badge(r),
         "pathSource": r.get("path_source", "DAILY_CONSERVATIVE"),
         "vetoReasons": r["veto_flags"],
+        "selectedMethod": r.get("selected_method", "LOCK3"),
+        "selectedMethodFa": r.get("selected_method_fa", "🔒 قفل سه‌لایه"),
+        "all3Agree": bool(r.get("all3_agree", False)),
+        "consensusMode": int(r.get("consensus_mode", 3)),
+        "consensusBadgeFa": r.get("consensus_badge_fa", ""),
         "twPct": r["tw_pct"],
         "wDispPct": r.get("w_disp_pct", r["tw_pct"]),
         "twinVotes": f"{r['up_twins']} XAU - {r['down_twins']} USD",
@@ -166,29 +176,30 @@ def run_walk_forward_for_config(
     use_intraday_session_open: bool = False,
 ) -> dict[str, Any]:
     """
-    Execute a complete zero-leakage walk-forward run (`v4 Twin-First Production Engine`):
-      Pass 1 (Causal Feature Pass `2001..2026`):
-        - At each day `i`, compute Engines A, B, C strictly from `< date_i` + `T_0` open,
-          THEN append day `i`'s completed candle into `HistoricalTwinArchive`.
-      Pass 2 (Train-Only Calibration & Freeze):
-        - Fit `FrozenGoldCbaConfig` exclusively on `TRAIN (2012–2024)` rows (`date <= 2024-12-31`).
-        - Evaluate frozen `Gold CBA` + `6-Layer Veto Shield` + Dual Execution Simulator
-          across `TRAIN`, `VAL (2025)`, and `OOS (2026)`.
+    Execute complete zero-leakage walk-forward run (`v5.0.0`):
+      - Seeds `HistoricalTwinArchive` with the authentic Google Sheet Gold archive + completed bars,
+        where every `evaluate_twin_and_gaussian(target_date)` strictly slices `hist_date < target_date`!
+      - Calibrates & freezes `FrozenGoldCbaConfig` strictly on `TRAIN (2012–2024)`.
     """
     t0 = time.time()
-    archive = HistoricalTwinArchive()
-    archive_before_latest: HistoricalTwinArchive | None = None
-    day_states: list[dict[str, Any]] = []
+    records_by_date_all = {r["date"]: r for r in records}
 
+    archive_full = HistoricalTwinArchive()
+    archive_full.seed_from_sheet_and_records(records_by_date_all)
+
+    latest_date = records[-1]["date"]
+    archive_before_latest = HistoricalTwinArchive()
+    archive_before_latest.seed_from_sheet_and_records(records_by_date_all, max_date_exclusive=latest_date)
+
+    day_states: list[dict[str, Any]] = []
     distinct_both_ok = 0
     total_roster_days = 0
     price_free_ok = _verify_price_free_twin_signature()
-    max_sig_sums = [0, 0, 0]  # [ELE-P, FINAL, PRIM]
+    max_sig_sums = [0, 0, 0]
 
-    n_recs = len(records)
-    for idx_rec, rec in enumerate(records):
-        if idx_rec == n_recs - 1:
-            archive_before_latest = copy.deepcopy(archive)
+    for rec in records:
+        if rec["split"] not in ("TRAIN", "VAL", "OOS"):
+            continue
 
         entry_open = float(rec["today_open"])
         target_close = float(rec["_target_close"])
@@ -223,7 +234,7 @@ def run_walk_forward_for_config(
         max_sig_sums[1] = max(max_sig_sums[1], sum(sig["final"]))
         max_sig_sums[2] = max(max_sig_sums[2], sum(sig["prim"]))
 
-        ec = archive.evaluate_twin_and_gaussian(
+        ec = archive_full.evaluate_twin_and_gaussian(
             target_date=rec["date"],
             weekday_up=rec["weekday_up"],
             sig=sig,
@@ -236,51 +247,46 @@ def run_walk_forward_for_config(
             r2=eb["r2"],
         )
 
+        # Also ingest fallback-computed signature if `rec["date"]` wasn't in Google Sheet
+        if rec["date"] not in archive_full._seen_dates:
+            d_sgn = 1 if rec["_target_dir"] == "XAU" else (-1 if rec["_target_dir"] == "USD" else 0)
+            act_h = max(entry_open, float(rec["_target_high"]))
+            act_l = min(entry_open, float(rec["_target_low"]))
+            archive_full.add_completed_day(
+                date_iso=rec["date"],
+                weekday_up=rec["weekday_up"],
+                sig=sig,
+                direction_sign=d_sgn,
+                move_dollars=rec["_target_move"],
+                fav_up_atr=max(0.0, act_h - entry_open) / float(rec["atr14"]),
+                fav_dn_atr=max(0.0, entry_open - act_l) / float(rec["atr14"]),
+                is_noise_flat=rec["_is_noise_flat"],
+                hist_atr14=float(rec["atr14"]),
+            )
+
         sess_move = target_close - entry_open
         sess_dir = "XAU" if sess_move > 0 else ("USD" if sess_move < 0 else "FLAT")
         act_high = max(entry_open, float(rec["_target_high"]))
         act_low = min(entry_open, float(rec["_target_low"]))
 
-        if rec["split"] in ("TRAIN", "VAL", "OOS"):
-            day_states.append(
-                {
-                    "rec": rec,
-                    "ea": ea,
-                    "eb": eb,
-                    "sig": sig,
-                    "ec": ec,
-                    "date": rec["date"],
-                    "split": rec["split"],
-                    "score_a": ea["score_a"],
-                    "score_b": eb["score_b"],
-                    "score_c": ec["score_c"],
-                    "actual_dir": sess_dir,
-                    "actual_move": sess_move,
-                    "actual_high": act_high,
-                    "actual_low": act_low,
-                    "actual_close": target_close,
-                }
-            )
-
-        # Ingest completed historical daily bar strictly AFTER day_i prediction is emitted!
-        d_sgn = 1 if rec["_target_dir"] == "XAU" else (-1 if rec["_target_dir"] == "USD" else 0)
-        open_safe = max(1.0, float(rec["today_open"]))
-        fav_up_atr = max(0.0, act_high - open_safe) / float(rec["atr14"])
-        fav_dn_atr = max(0.0, open_safe - act_low) / float(rec["atr14"])
-        fav_up_pct = max(0.0, act_high - open_safe) / open_safe
-        fav_dn_pct = max(0.0, open_safe - act_low) / open_safe
-        archive.add_completed_day(
-            date_iso=rec["date"],
-            weekday_up=rec["weekday_up"],
-            sig=sig,
-            direction_sign=d_sgn,
-            move_dollars=rec["_target_move"],
-            fav_up_atr=fav_up_atr,
-            fav_dn_atr=fav_dn_atr,
-            is_noise_flat=rec["_is_noise_flat"],
-            fav_up_pct=fav_up_pct,
-            fav_dn_pct=fav_dn_pct,
-            hist_atr14=float(rec["atr14"]),
+        day_states.append(
+            {
+                "rec": rec,
+                "ea": ea,
+                "eb": eb,
+                "sig": sig,
+                "ec": ec,
+                "date": rec["date"],
+                "split": rec["split"],
+                "score_a": ea["score_a"],
+                "score_b": eb["score_b"],
+                "score_c": ec["score_c"],
+                "actual_dir": sess_dir,
+                "actual_move": sess_move,
+                "actual_high": act_high,
+                "actual_low": act_low,
+                "actual_close": target_close,
+            }
         )
 
     # STRICT TRAIN-ONLY CALIBRATION (`2012-01-01` .. `2024-12-31`)
@@ -325,6 +331,11 @@ def run_walk_forward_for_config(
                 "score_a": st["score_a"],
                 "score_b": st["score_b"],
                 "score_c": st["score_c"],
+                "selected_method": st["ec"]["selected_method"],
+                "selected_method_fa": st["ec"]["selected_method_fa"],
+                "all3_agree": st["ec"]["all3_agree"],
+                "consensus_mode": st["ec"]["consensus_mode"],
+                "consensus_badge_fa": st["ec"]["consensus_badge_fa"],
                 "tw_pct": st["ec"]["tw_pct"],
                 "w_disp_pct": st["ec"]["w_disp_pct"],
                 "twin_count": st["ec"]["twin_count"],
@@ -359,6 +370,9 @@ def run_walk_forward_for_config(
     lock3_peak_all_rate = round(
         sum(1 for r in evaluated_rows if r["lock3_peak"]) * 100.0 / max(1, len(evaluated_rows)), 2
     )
+    all3_all_rate = round(
+        sum(1 for r in evaluated_rows if r["all3_agree"]) * 100.0 / max(1, len(evaluated_rows)), 2
+    )
 
     return {
         "anchor_key": anchor_key,
@@ -368,17 +382,18 @@ def run_walk_forward_for_config(
         "elapsed_sec": round(time.time() - t0, 2),
         "frozen_cfg": asdict(frozen_cfg),
         "subset_violations": subset_violations,
-        "lookahead_leakage": archive.lookahead_violations,
-        "total_twin_queries": archive.total_queries,
+        "lookahead_leakage": archive_full.lookahead_violations,
+        "total_twin_queries": archive_full.total_queries,
         "distinct_8v8_rate_pct": distinct_rate,
         "price_free_twin_signature": bool(price_free_ok),
         "max_sig_sums": {"ELE_P": max_sig_sums[0], "FINAL": max_sig_sums[1], "PRIM": max_sig_sums[2]},
         "lock3_rate_pct": lock3_all_rate,
         "lock3_peak_rate_pct": lock3_peak_all_rate,
+        "all3_agree_rate_pct": all3_all_rate,
         "veto_counts": veto_counts,
         "splits": splits_summary,
         "rows": evaluated_rows,
-        "archive_full": archive,
+        "archive_full": archive_full,
         "archive_before_latest": archive_before_latest,
     }
 
@@ -392,8 +407,8 @@ def build_live_signal_card(
     spot_override: float | None = None,
 ) -> dict[str, Any]:
     """
-    Generate full diagnostic & REST-ready Live Signal Card (`need_hits=True` for full aspect breakdown).
-    `archive` MUST contain strictly `< latest_rec["date"]` rows!
+    Generate full diagnostic & REST-ready Live Signal Card (`v5.0.0`).
+    `archive.evaluate_twin_and_gaussian` strictly filters `hist_date < latest_rec["date"]`!
     """
     ea = evaluate_engine_a(
         d_iso=latest_rec["date"],
@@ -427,7 +442,6 @@ def build_live_signal_card(
     bias_dir = cba["pick"] if cba["pick"] else cba["raw_dir"]
 
     return {
-        # Production v4 REST schema fields (`GET /api/signals/today`)
         "sessionDate": latest_rec["date"],
         "weekday": latest_rec["weekday"],
         "candleOpenUtc": ea["utc_iso"],
@@ -462,8 +476,10 @@ def build_live_signal_card(
         "vetoReasons": cba["veto_flags"],
         "vetoShield6": cba["veto_shield_6"],
         "kalshiBracket": cba["kalshi_bracket"],
+        "threeMethodComparison": ec["three_method_comparison"],
         "signature12Col": {
             "priceFree": sig["price_free"],
+            "source": sig.get("source", "GOOGLE_SHEET"),
             "PRIM_FAWE": list(sig["prim"]),
             "FINAL_FAWE": list(sig["final"]),
             "ELEP_FAWE": list(sig["elep"]),
@@ -498,9 +514,18 @@ def build_live_signal_card(
         },
         "matchedTwins": ec["matched_twins"],
         "twinConsensus": {
+            "selectedMethod": ec["selected_method"],
+            "selectedMethodFa": ec["selected_method_fa"],
+            "all3Agree": ec["all3_agree"],
+            "consensusMode": ec["consensus_mode"],
+            "consensusBadgeFa": ec["consensus_badge_fa"],
+            "ruleReason": ec["rule_reason"],
+            "ruleReasonFa": ec["rule_reason_fa"],
+            "threeMethodComparison": ec["three_method_comparison"],
             "twinCount": ec["twin_count"],
             "upTwins": ec["up_twins"],
             "downTwins": ec["down_twins"],
+            "margin": ec["margin"],
             "votes": f"{ec['up_twins']} XAU - {ec['down_twins']} USD ({ec['tw_pct']}%)",
             "dispPct": ec["tw_pct"],
             "weightedDispPct": ec["w_disp_pct"],
@@ -514,6 +539,7 @@ def build_live_signal_card(
             "lock3Peak": ec["lock3_peak"],
             "highPurityLock3Peak": ec["high_purity_lock3_peak"],
             "activeLockElem": ec["active_lock_elem"],
+            "posLayers": ec["pos_layers"],
             "decan11": ec["decan_11"],
             "decan00": ec["decan_00"],
             "fp1_4": list(ec["fp"]),
@@ -521,7 +547,6 @@ def build_live_signal_card(
             "gaussScore": ec["gauss_score"],
             "tpAtrs": list((ec["tp1_atr"], ec["tp2_atr"], ec["tp3_atr"])),
         },
-        # Backwards-compatible keys preserved for CLI report & invariant unit tests
         "date": latest_rec["date"],
         "anchor_key": anchor_key,
         "anchor_label": ANCHOR_CANDIDATES[anchor_key]["label"],
@@ -568,6 +593,7 @@ def build_live_signal_card(
         "away_usd_roster": eb["usd_roster"],
         "signature_12col": {
             "price_free": sig["price_free"],
+            "source": sig.get("source", "GOOGLE_SHEET"),
             "PRIM_FAWE": list(sig["prim"]),
             "FINAL_FAWE": list(sig["final"]),
             "ELEP_FAWE": list(sig["elep"]),
@@ -579,6 +605,9 @@ def build_live_signal_card(
             "celestial_decan_tags": sig["celestial_decan_tags"],
         },
         "twins_and_gaussian": {
+            "selected_method": ec["selected_method"],
+            "all3_agree": ec["all3_agree"],
+            "consensus_mode": ec["consensus_mode"],
             "twin_count": ec["twin_count"],
             "votes": f"{ec['up_twins']} XAU - {ec['down_twins']} USD ({ec['tw_pct']}%)",
             "w_disp_pct": ec["w_disp_pct"],
@@ -606,10 +635,7 @@ def _build_projected_session_rec(
     live_spot: float | None = None,
     split_tag: str = "FUTURE_PROJECTION",
 ) -> dict[str, Any]:
-    """
-    Construct a causal projected session record for any future trading weekday `target_dt > latest_rec["date"]`
-    using `latest_rec`'s completed OHLC as `Prev_Day` and `live_spot` (or `Prev_Close`) as indicative open.
-    """
+    """Construct causal projected session record for any future weekday `target_dt > latest_rec["date"]`."""
     roll_open = round(float(live_spot if live_spot is not None else latest_rec["_target_close"]), 2)
     prev_h = max(float(latest_rec["today_open"]), float(latest_rec["_target_high"]), roll_open)
     prev_l = min(float(latest_rec["today_open"]), float(latest_rec["_target_low"]), roll_open)
@@ -620,7 +646,9 @@ def _build_projected_session_rec(
     new_ema20 = a20 * prev_c + (1.0 - a20) * float(latest_rec["ema20"])
     new_ema50 = a50 * prev_c + (1.0 - a50) * float(latest_rec["ema50"])
     new_slope = float(latest_rec["ema20_slope"]) * 0.8 + (new_ema20 - float(latest_rec["ema20"])) / max(1.0, atr)
-    new_ret20 = float(latest_rec["rolling_20d_ret"]) + (prev_c - float(latest_rec["prev_close"])) / max(1.0, float(latest_rec["prev_close"]))
+    new_ret20 = float(latest_rec["rolling_20d_ret"]) + (prev_c - float(latest_rec["prev_close"])) / max(
+        1.0, float(latest_rec["prev_close"])
+    )
     if (prev_c > new_ema20 > new_ema50) and (new_slope > 0.0) and (new_ret20 > 0.0):
         new_regime = "STRONG_BULL"
     elif (prev_c < new_ema20 < new_ema50) and (new_slope < 0.0) and (new_ret20 < 0.0):
@@ -664,7 +692,6 @@ def _build_projected_session_rec(
 
 
 def _build_next_session_preview_rec(latest_rec: dict[str, Any], live_spot: float | None = None) -> dict[str, Any]:
-    """Construct causal rollover preview record for the immediate next trading weekday after `latest_rec["date"]`."""
     y, m, d = map(int, latest_rec["date"].split("-"))
     nxt_dt = datetime.date(y, m, d) + datetime.timedelta(days=1)
     while nxt_dt.weekday() >= 5:
@@ -673,10 +700,9 @@ def _build_next_session_preview_rec(latest_rec: dict[str, Any], live_spot: float
 
 
 def _fetch_live_yahoo_spot_quote() -> tuple[float | None, str]:
-    """Attempt quick non-blocking live quote fetch for Gold (`GC=F`) with safe fallback."""
     url = "https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1h&range=2d"
     try:
-        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=(1.2, 1.5))
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=(1.2, 1.8))
         if r.status_code == 200:
             meta = r.json().get("chart", {}).get("result", [{}])[0].get("meta", {})
             rmp = meta.get("regularMarketPrice")
@@ -690,12 +716,18 @@ def _fetch_live_yahoo_spot_quote() -> tuple[float | None, str]:
 def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, Any]:
     """
     Fast O(1) live refresh used by `POST /api/refresh`:
-    loads pre-indexed `xauusd_twin_archive.pkl` (rebuilding once if absent) + optional live spot quote,
-    and recomputes `shards/latest_xauusd_signals.json` in `< 0.2s` while keeping `RSS < 95 MiB`.
+      - Re-syncs Google Sheets CSVs (`HISTORY_CSV` & `SIGNALS_CSV`) when `try_network_fetch=True`
+        with graceful local fallback,
+      - Fetches optional live `GC=F` spot quote,
+      - Recomputes `shards/latest_xauusd_signals.json` (`v5.0.0`) while keeping `RSS < 150 MiB`.
     """
     live_spot = None
     feed_source = "CACHED_VERIFIED_FEED"
+    sheets_synced = False
+    sheet_sync_mode = "CACHED_LOCAL_SHEET_JSON"
+
     if try_network_fetch:
+        sheets_synced, sheet_sync_mode = sync_gold_sheets_from_remote(timeout=(3.5, 9.5))
         live_spot, feed_source = _fetch_live_yahoo_spot_quote()
 
     summary_path = os.path.join(DATA_DIR, "xauusd_backtest_summary.json")
@@ -712,49 +744,33 @@ def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, 
         try:
             with open(pkl_path, "rb") as pf:
                 cached_bundle = pickle.load(pf)
-            latest_rec = cached_bundle["latest_rec"]
-            archive_before_latest = cached_bundle["archive_before_latest"]
-            archive = cached_bundle["archive_full"]
-            records_by_date = cached_bundle.get("records_by_date")
+            if cached_bundle.get("version") == PIPELINE_VERSION:
+                latest_rec = cached_bundle["latest_rec"]
+                records_by_date = cached_bundle.get("records_by_date")
+                if not sheets_synced:
+                    archive_before_latest = cached_bundle["archive_before_latest"]
+                    archive = cached_bundle["archive_full"]
         except Exception:
             latest_rec = None
 
-    if latest_rec is None or archive_before_latest is None or archive is None or records_by_date is None:
+    if latest_rec is None or records_by_date is None:
+        from src.data_loader import build_zero_leakage_daily_records, fetch_and_cache_market_data
+
         df_daily, _df_1h, df_sess = fetch_and_cache_market_data(force_refresh=False)
         records = build_zero_leakage_daily_records(df_daily, df_sess)
         records_by_date = {r["date"]: r for r in records if r["date"] >= "2012-01-01"}
-        archive = HistoricalTwinArchive()
-        n_recs = len(records)
-        for idx_r, rec in enumerate(records):
-            if idx_r == n_recs - 1:
-                archive_before_latest = copy.deepcopy(archive)
-            entry_open = float(rec["today_open"])
-            ea = evaluate_engine_a(
-                rec["date"], entry_open, rec["prev_close"], rec["dxy_prev_close"],
-                LOCKED_ANCHOR_KEY, LOCKED_ROUNDING_MODE, need_hits=False,
-            )
-            sig = build_day_12col_signature(ea)
-            d_sgn = 1 if rec["_target_dir"] == "XAU" else (-1 if rec["_target_dir"] == "USD" else 0)
-            act_h = max(entry_open, float(rec["_target_high"]))
-            act_l = min(entry_open, float(rec["_target_low"]))
-            archive.add_completed_day(
-                date_iso=rec["date"],
-                weekday_up=rec["weekday_up"],
-                sig=sig,
-                direction_sign=d_sgn,
-                move_dollars=rec["_target_move"],
-                fav_up_atr=max(0.0, act_h - entry_open) / float(rec["atr14"]),
-                fav_dn_atr=max(0.0, entry_open - act_l) / float(rec["atr14"]),
-                is_noise_flat=rec["_is_noise_flat"],
-                fav_up_pct=max(0.0, act_h - entry_open) / max(1.0, entry_open),
-                fav_dn_pct=max(0.0, entry_open - act_l) / max(1.0, entry_open),
-                hist_atr14=float(rec["atr14"]),
-            )
         latest_rec = records[-1]
-        assert archive_before_latest is not None
+
+    if archive is None or archive_before_latest is None:
+        archive = HistoricalTwinArchive()
+        archive.seed_from_sheet_and_records(records_by_date)
+        archive_before_latest = HistoricalTwinArchive()
+        archive_before_latest.seed_from_sheet_and_records(records_by_date, max_date_exclusive=latest_rec["date"])
+
         with open(pkl_path, "wb") as pf:
             pickle.dump(
                 {
+                    "version": PIPELINE_VERSION,
                     "latest_rec": latest_rec,
                     "archive_before_latest": archive_before_latest,
                     "archive_full": archive,
@@ -779,9 +795,11 @@ def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, 
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     return {
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.2.0",
+        "version": PIPELINE_VERSION,
         "anchor": LOCKED_ANCHOR_KEY,
         "feedSource": feed_source,
+        "sheetSyncMode": sheet_sync_mode,
+        "sheetsSynced": sheets_synced,
         "lastUpdatedUtc": now_iso,
         **live_card,
         "liveSession": live_card,
@@ -802,13 +820,10 @@ def build_signal_by_date_payload(
     live_spot: float | None = None,
 ) -> dict[str, Any]:
     """
-    Evaluate ANY requested date (`Past 2012..latest_bar`, `Present latest_bar`, or `Future > latest_bar`):
-      - Auto-snaps weekend / holiday dates to the nearest valid Monday-Friday trading session.
-      - Historical dates (`<= latest_bar`): returns full zero-leakage radar payload (`matchedTwins < sessionDate`)
-        PLUS actual candle & execution outcomes (`actualMove`, `hitOutcome`, `execPnl`).
-      - Future dates (`> latest_bar`): computes exact topocentric `18:00 America/New_York (D-1)` Dual-Pole
-        celestial chart, `12-Col Twin Signature`, `matchedTwins (< latest_bar)`, and celestial Veto checks,
-        anchoring projected `8v8` S/R levels to the latest known spot/OHLC/ATR14 (`پیشبینی تاریخ آتی`).
+    Evaluate ANY requested date (`Past 2012..latest_bar`, `Present latest_bar`, or `Future > latest_bar` up to `2035-12-31`):
+      - Auto-snaps weekend / holiday dates to nearest trading weekday.
+      - Strictly enforces `matchedTwins < sessionDate` (`lookAheadLeakage == 0`).
+      - Uses Google Sheet signature up to `2027-02-26` and multi-planet `v82` fallback beyond `2027-02-26`.
     """
     raw_s = requested_date_str.strip()
     try:
@@ -871,6 +886,8 @@ def build_signal_by_date_payload(
         exec_win = bool(hrow.get("execWin", False))
         raw_pnl = float(hrow.get("rawClosePnl", act_move if card["biasDirection"] == "XAU" else -act_move))
         raw_win = bool(hrow.get("rawCloseWin", raw_pnl > 0))
+        daily_win = bool(hrow.get("dailyTargetWin", raw_win))
+        daily_pnl = float(hrow.get("dailyTargetPnl", raw_pnl))
 
         session_type = "LIVE" if is_live else "HISTORICAL"
         mode_badge_fa = "سشن زنده فعلی (Live Session)" if is_live else "بازبینی سشن تاریخی"
@@ -878,7 +895,7 @@ def build_signal_by_date_payload(
         return {
             "ok": True,
             "service": "XAUUSD-FUSION-SIGNAL",
-            "version": "4.2.0",
+            "version": PIPELINE_VERSION,
             "requestedDate": req_iso,
             "snapped": snapped,
             "snappedNoteFa": snapped_note_fa,
@@ -899,6 +916,8 @@ def build_signal_by_date_payload(
             "actualClose": float(hrow.get("actualClose", round(float(rec.get("_target_close", rec["today_open"])), 2))),
             "hitOutcome": hit_out,
             "outcomeCode": str(hrow.get("outcome", "")),
+            "dailyTargetWin": daily_win,
+            "dailyTargetPnl": round(daily_pnl, 2),
             "execPnl": exec_pnl,
             "execWin": exec_win,
             "rawClosePnl": round(raw_pnl, 2),
@@ -911,11 +930,11 @@ def build_signal_by_date_payload(
 
     # Future Date Branch (`req_iso > latest_bar_iso`)
     eval_dt = req_dt
-    if eval_dt.weekday() == 5:  # Saturday
+    if eval_dt.weekday() == 5:
         fri_dt = eval_dt - datetime.timedelta(days=1)
         eval_dt = fri_dt if fri_dt > latest_bar_dt else (eval_dt + datetime.timedelta(days=2))
         snapped = True
-    elif eval_dt.weekday() == 6:  # Sunday
+    elif eval_dt.weekday() == 6:
         eval_dt = eval_dt + datetime.timedelta(days=1)
         snapped = True
 
@@ -948,10 +967,16 @@ def build_signal_by_date_payload(
         nxt_dt += datetime.timedelta(days=1)
     next_date = nxt_dt.strftime("%Y-%m-%d")
 
+    sig_src_fa = (
+        "شیت رسمی طلا (۲۰۱۲–۲۰۲۷)"
+        if card["signature12Col"]["source"] == "GOOGLE_SHEET"
+        else "محاسبه نجومی ۱۲ سیاره و ۲۴ زاویه (فراتر از ۲۰۲۷)"
+    )
+
     return {
         "ok": True,
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.2.0",
+        "version": PIPELINE_VERSION,
         "requestedDate": req_iso,
         "snapped": snapped,
         "snappedNoteFa": snapped_note_fa,
@@ -964,144 +989,71 @@ def build_signal_by_date_payload(
         "nextSessionDate": next_date,
         "modeBadgeFa": "پیشبینی تاریخ آتی",
         "futureProjectionNoteFa": (
-            f"پیشبینی تاریخ آتی ({eval_iso}) — نقشه نجومی دوقطبی ۱۸:۰۰ نیویورک و امضای ۱۲ ستونی دقیق "
-            f"برای این تاریخ محاسبه شده و سطوح ۸×۸ بر پایه آخرین اسپات (${card['spotPrice']:,.2f}) لنگر شده‌اند."
+            f"پیشبینی تاریخ آتی ({eval_iso}) — منبع ماتریس ۱۲ ستونی: {sig_src_fa} • "
+            f"انتخابگر هوشمند ۳ روشه ({card['twinConsensus']['selectedMethodFa']}) و سطوح ۸×۸ بر پایه آخرین اسپات (${card['spotPrice']:,.2f})."
         ),
         **card,
         "actualMove": None,
         "actualDir": None,
         "hitOutcome": "پیشبینی تاریخ آتی",
+        "dailyTargetWin": None,
+        "dailyTargetPnl": None,
         "execPnl": None,
         "execWin": None,
     }
 
 
-def _load_prior_versions_for_comparison() -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+def _load_prior_versions_for_comparison() -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, Any] | None]:
     v1_splits = None
     v3_splits = None
+    v4_splits = None
     p1_path = os.path.join(DATA_DIR, "phase1_anchor_benchmark.json")
     v3_path = os.path.join(DATA_DIR, "v3_backtest_summary.json")
+    v4_path = os.path.join(DATA_DIR, "v41_backtest_summary.json")
     if os.path.exists(p1_path):
         with open(p1_path, encoding="utf-8") as f:
-            p1_list = json.load(f)
-        for item in p1_list:
-            if item.get("anchor_key") == LOCKED_ANCHOR_KEY and item.get("rounding_mode") == LOCKED_ROUNDING_MODE:
-                v1_splits = item.get("splits")
-                break
+            for item in json.load(f):
+                if item.get("anchor_key") == LOCKED_ANCHOR_KEY and item.get("rounding_mode") == LOCKED_ROUNDING_MODE:
+                    v1_splits = item.get("splits")
+                    break
     if os.path.exists(v3_path):
         with open(v3_path, encoding="utf-8") as f:
             v3_splits = json.load(f).get("splits")
-    return v1_splits, v3_splits
+    if os.path.exists(v4_path):
+        with open(v4_path, encoding="utf-8") as f:
+            v4_splits = json.load(f).get("splits")
+    return v1_splits, v3_splits, v4_splits
 
 
-def _print_signal_card_block(title_prefix: str, card: dict[str, Any]) -> None:
-    s = card["signal"]
-    mc = card["market_context"]
-    ep = card["ephemeris"]
-    sg = card["signature_12col"]
-    tw = card["twins_and_gaussian"]
-
-    print("\n" + "=" * 126)
-    print(
-        f"  {title_prefix} • {card['date']} ({card['weekday']}) • {card['utc_timestamp']} • "
-        f"Distinct8v8={card['distinct_8v8_verified']} • PriceFreeSig={card['price_free_twin_signature']}"
-    )
-    print("=" * 126)
-    print(
-        f"  Entity Locks : DEG1={DEG1_GOLD}° (17° CANCER) | DEG2={DEG2_XAUUSD}° (27° LEO) | "
-        f"HOME XAU={HOME_XAU_DEG}° (17° GEMINI) | AWAY USD={AWAY_USD_DEG}° (10° GEMINI)"
-    )
-    print(
-        f"  Topocentric  : ASC={ep['asc']} | MC={ep['mc']} | POF={ep['pof']} | "
-        f"Planetary Hour={ep['planetary_hour_ruler']} ({ep['planetary_hour_element']})"
-    )
-    print(
-        f"  Market @ T_0 : Open=${mc['today_open']:.2f} | PrevClose=${mc['prev_close']:.2f} | "
-        f"EMA20=${mc['ema20']:.2f} | EMA50=${mc['ema50']:.2f} | MacroRegime={mc['macro_trend_regime']} | "
-        f"ATR14=${mc['atr14']:.2f} | Room(R2-S2)=${mc['room_to_run_r2s2']:+.2f}"
-    )
-
-    print("\n  [HOME TEAM: XAU 8-Player Breakout-Aware Support Roster (Strictly Distinct Levels <= Open)]")
-    print(f"  {'Pos':4s} | {'Role':15s} | {'Level ($)':10s} | {'eff_w':6s} | {'Deg & Zodiac':21s} | {'Elem':5s} | {'Decan & Ruler':27s} | {'GEO':4s} | {'uRes':7s} | {'Aspects'}")
-    print("  " + "-" * 122)
-    for p in card["home_xau_roster"]["players"]:
-        d_z = f"{p['deg']:3d}° ({p['zodiac']})"
-        dec_r = f"D{p['decan']:02d} {p['decan_label']} ({p['decan_ruler']})"
-        asp_s = ",".join(p["aspect_hits"]) if p["aspect_hits"] else "—"
-        print(f"  {p['pos']:4s} | {p['role']:15s} | ${p['level']:9.2f} | {p['eff_w']:6.3f} | {d_z:21s} | {p['element']:5s} | {dec_r:27s} | {p['gf']:4s} | {p['unit_resonance']:+7.3f} | {asp_s}")
-
-    print("\n  [AWAY TEAM: USD 8-Player Breakout-Aware Resistance Roster (Strictly Distinct Levels >= Open)]")
-    print(f"  {'Pos':4s} | {'Role':15s} | {'Level ($)':10s} | {'eff_w':6s} | {'Deg & Zodiac':21s} | {'Elem':5s} | {'Decan & Ruler':27s} | {'GEO':4s} | {'uRes':7s} | {'Aspects'}")
-    print("  " + "-" * 122)
-    for p in card["away_usd_roster"]["players"]:
-        d_z = f"{p['deg']:3d}° ({p['zodiac']})"
-        dec_r = f"D{p['decan']:02d} {p['decan_label']} ({p['decan_ruler']})"
-        asp_s = ",".join(p["aspect_hits"]) if p["aspect_hits"] else "—"
-        print(f"  {p['pos']:4s} | {p['role']:15s} | ${p['level']:9.2f} | {p['eff_w']:6.3f} | {d_z:21s} | {p['element']:5s} | {dec_r:27s} | {p['gf']:4s} | {p['unit_resonance']:+7.3f} | {asp_s}")
-
-    print("\n  [100% Price-Free Pure Celestial 12-Col Signature, Recency-ATR Twins & 6-Layer Veto Shield]")
-    print(
-        f"  12-Col FAWE  : PRIM={sg['PRIM_FAWE']} | FINAL={sg['FINAL_FAWE']} | "
-        f"ELE-P={sg['ELEP_FAWE']} (zeroElepCnt={sg['zeroElepCnt']})"
-    )
-    print(f"  Sky Anchors  : {', '.join(sg['celestial_decan_tags'])} | Hits: {', '.join(sg['step3_hits'])}")
-    print(f"  Parity Codes : GEO-FIG={sg['GEO_FIG']} | DEC-GEO={sg['DEC_GEO']} | RULER-GEO={sg['RULER_GEO']}")
-    print(
-        f"  Shared Twins : {tw['votes']} (Weighted={tw['w_disp_pct']}%) | Dom={tw['strong_avg_dominance']} | "
-        f"LOCK3={tw['lock3_cols']} | LOCK3_PEAK={tw['lock3_peak']} | Dec1/1={tw['decan_11']}"
-    )
-    print(f"  Twin Dates   : {', '.join(tw['twin_dates']) if tw['twin_dates'] else 'None'}")
-    print(f"  6-Lyr Veto   : {'CLEAN (0/6 Vetoes Triggered)' if not s['veto_flags'] else ', '.join(s['veto_flags'])}")
-    print("  " + "-" * 122)
-    dir_disp = "LONG XAU" if (s["pick"] or s["raw_dir"]) == "XAU" else "SHORT XAU"
-    print(
-        f"  VERDICT      : {s['tier_badge']} ({s['kelly_multiplier']:.2f}x Kelly) | Action: {s['action']} "
-        f"(Bias: {dir_disp} • WinProb {s['win_prob_pct']}%) | RR={s['rr_ratio']:.2f} | "
-        f"Kalshi: {s['kalshi_bracket']['recommendedContract']}"
-    )
-    print(
-        f"  LEVELS ($)   : Entry = ${s['entry']:.2f} | SL = ${s['sl']:.2f} | "
-        f"TP1 = ${s['tp1']:.2f} | TP2 = ${s['tp2']:.2f} | TP3 = ${s['tp3']:.2f}"
-    )
-    print("=" * 126)
-
-
-def print_v4_report(
+def print_v5_report(
     winner_run: dict[str, Any],
     live_card: dict[str, Any],
     next_card: dict[str, Any],
-    v1_splits: dict[str, Any] | None,
-    v3_splits: dict[str, Any] | None,
 ) -> None:
-    print("\n" + "=" * 126)
+    print("\n" + "=" * 128)
     print(
-        f"  XAUUSD-FUSION-SIGNAL v4.0.0 TWIN-FIRST PRODUCTION ENGINE • {winner_run['anchor_label']} | "
-        f"Rounding: round(P) % 360 ({winner_run['rounding_mode']})"
+        f"  XAUUSD-FUSION-SIGNAL v{PIPELINE_VERSION} • SHEET-BACKED 4-METHOD SMART TWIN SELECTOR + 8v8 ROSTER FUSION"
     )
     print(
         f"  INVARIANT AUDIT: subsetViolations == {winner_run['subset_violations']} | "
         f"lookAheadLeakage == {winner_run['lookahead_leakage']} | "
         f"distinct8v8Roster == {winner_run['distinct_8v8_rate_pct']:.2f}% | "
-        f"priceFreeTwinSignature == {winner_run['price_free_twin_signature']}"
+        f"maxSigSums == {winner_run['max_sig_sums']}"
     )
-    print(
-        f"  PURE CELESTIAL TWIN LOCKS: LOCK3 == {winner_run['lock3_rate_pct']:.1f}% | "
-        f"LOCK3_PEAK == {winner_run['lock3_peak_rate_pct']:.1f}%"
-    )
-    print("=" * 126)
+    print("=" * 128)
 
     for sp_code, sp_title, yrs in [
-        ("TRAIN", "TRAIN (2012-01-01 .. 2024-12-31 • Conservative Daily OHLC)", 13.0),
+        ("TRAIN", "TRAIN (2012-01-01 .. 2024-12-31 • Calibrated & Frozen)", 13.0),
         ("VAL",   "VALIDATION (2025-01-01 .. 2025-12-31 • Chronological 1h Path)", 1.0),
         ("OOS",   "BLIND OUT-OF-SAMPLE (2026-01-01 .. 2026-11-26 YTD • Chronological 1h Path)", 0.90),
     ]:
         print(f"\n  [{sp_title}]")
         print(
-            f"  {'Tier':18s} | {'Trd/Yr':7s} | {'LOCK3%':7s} | "
-            f"{'Raw Close W-L':14s} | {'Raw Win%':8s} | {'Raw PF':6s} | {'Raw Exp$':9s} || "
-            f"{'TP1-vs-SL W-L':14s} | {'Exec Win%':9s} | {'Exec PF':7s} | {'Exec Exp$':9s}"
+            f"  {'Tier':18s} | {'Trd/Yr':7s} | {'All3%':6s} | "
+            f"{'Daily Target Win% (KXGOLDPERP)':32s} || "
+            f"{'Stepped SL=0.85ATR Win% / PF / Exp$':36s}"
         )
-        print("  " + "-" * 124)
+        print("  " + "-" * 116)
         sp_d = winner_run["splits"][sp_code]
         for tk, tlabel in [
             ("TIER_C", "👑 Tier C (1.20x)"),
@@ -1111,40 +1063,30 @@ def print_v4_report(
         ]:
             m = sp_d[tk]
             trd_yr = m["n"] / yrs
-            rw_wl = f"{m['n']}({m['raw_wins']}-{m['raw_losses']})"
-            ex_wl = f"{m['n']}({m['exec_wins']}-{m['exec_losses']})"
-            print(
-                f"  {tlabel:18s} | {trd_yr:6.1f}  | {m['lock3_rate']:5.1f}%  | "
-                f"{rw_wl:14s} | {m['raw_win_rate']:6.2f}%  | {m['raw_pf']:6.2f} | ${m['raw_exp_usd']:+7.2f} || "
-                f"{ex_wl:14s} | {m['exec_win_rate']:7.2f}%  | {m['exec_pf']:7.2f} | ${m['exec_exp_usd']:+7.2f}"
-            )
+            dw_s = f"{m['daily_win_rate']:6.2f}% ({m['daily_wins']}-{m['daily_losses']}, PF {m['daily_pf']:4.2f})"
+            sw_s = f"{m['exec_win_rate']:6.2f}% ({m['exec_wins']}-{m['exec_losses']}, PF {m['exec_pf']:4.2f}, ${m['exec_exp_usd']:+6.2f})"
+            print(f"  {tlabel:18s} | {trd_yr:6.1f}  | {m['all3_agree_rate']:5.1f}% | {dw_s:32s} || {sw_s:36s}")
 
-    if v1_splits and v3_splits:
-        print("\n" + "=" * 126)
-        print("  SIDE-BY-SIDE EVOLUTION BENCHMARK: v1 (Phase 1) vs v3 (OLS Hybrid Lock) vs v4 (Non-Parametric Twin-First Consensus)")
-        print("=" * 126)
-        for sp_code, sp_lbl, yrs in [("TRAIN", "TRAIN 12-24", 13.0), ("VAL", "VAL 2025", 1.0), ("OOS", "OOS 2026 YTD", 0.90)]:
-            print(f"\n  [{sp_lbl}]")
-            print(f"  {'Tier':12s} | {'v1 RawWin% (Trd/Yr, PF, Exp$)':35s} | {'v3 Raw|Exec Win% (Trd/Yr, ExecPF, Exp$)':42s} | {'v4 Raw|Exec Win% (Trd/Yr, ExecPF, Exp$)':42s}")
-            print("  " + "-" * 126)
-            for tk, tshort in [("TIER_C", "👑 Tier C"), ("TIER_B", "⭐ Tier B"), ("TIER_A", "🟢 Tier A")]:
-                m1 = v1_splits[sp_code][tk]
-                m3 = v3_splits[sp_code][tk]
-                m4 = winner_run["splits"][sp_code][tk]
-                s1 = f"{m1['win_rate']:5.1f}% ({m1['n']/yrs:4.1f}/y, PF {m1['pf']:4.2f}, ${m1['expectancy_usd']:+6.2f})"
-                s3 = f"{m3['raw_win_rate']:5.1f}%|{m3['exec_win_rate']:5.1f}% ({m3['n']/yrs:4.1f}/y, PF {m3['exec_pf']:4.2f}, ${m3['exec_exp_usd']:+6.2f})"
-                s4 = f"{m4['raw_win_rate']:5.1f}%|{m4['exec_win_rate']:5.1f}% ({m4['n']/yrs:4.1f}/y, PF {m4['exec_pf']:4.2f}, ${m4['exec_exp_usd']:+6.2f})"
-                print(f"  {tshort:12s} | {s1:35s} | {s3:42s} | {s4:42s}")
-
-    print("\n  [6-Layer Veto Shield Trap & Counter-Macro Rejections Across 2012-2026]")
-    for vk, vc in sorted(winner_run["veto_counts"].items()):
-        print(f"    - {vk:30s}: {vc:4d} days shielded from Tier B / Tier C")
-
-    _print_signal_card_block("v4 LIVE LATEST COMPLETED SESSION DIAGNOSTIC CARD", live_card)
-    _print_signal_card_block("v4 UPCOMING ROLLOVER SESSION PREVIEW CARD (INDICATIVE OPEN = PREV CLOSE)", next_card)
+    print(
+        f"\n  LIVE SESSION ({live_card['sessionDate']}): {live_card['tierBadge']} {live_card['direction']} | "
+        f"Method={live_card['twinConsensus']['selectedMethod']} ({live_card['twinConsensus']['votes']}) | "
+        f"Mode={live_card['twinConsensus']['consensusMode']}"
+    )
+    print(
+        f"  NEXT PREVIEW ({next_card['sessionDate']}): {next_card['tierBadge']} {next_card['direction']} | "
+        f"Method={next_card['twinConsensus']['selectedMethod']} ({next_card['twinConsensus']['votes']}) | "
+        f"Mode={next_card['twinConsensus']['consensusMode']}"
+    )
 
 
 def run_full_pipeline() -> dict[str, Any]:
+    from src.data_loader import (
+        build_zero_leakage_daily_records,
+        fetch_and_cache_market_data,
+        group_1h_bars_by_session,
+    )
+
+    hist_bundle, sig_bundle, _ = load_gold_sheet_bundles(auto_sync_if_missing=True)
     df_daily, df_1h, df_sess = fetch_and_cache_market_data(force_refresh=False)
     records = build_zero_leakage_daily_records(df_daily, df_sess)
     bars_1h_map = group_1h_bars_by_session(df_1h)
@@ -1178,7 +1120,7 @@ def run_full_pipeline() -> dict[str, Any]:
         rounding_mode=LOCKED_ROUNDING_MODE,
     )
 
-    v1_splits, v3_splits = _load_prior_versions_for_comparison()
+    v1_splits, v3_splits, v4_splits = _load_prior_versions_for_comparison()
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -1186,12 +1128,21 @@ def run_full_pipeline() -> dict[str, Any]:
 
     summary_export = {
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.2.0",
-        "versionTag": "v4.1",
+        "version": PIPELINE_VERSION,
+        "versionTag": "v5.0",
         "lastUpdatedUtc": now_iso,
         "locked_anchor": winner_run["anchor_key"],
         "locked_anchor_label": winner_run["anchor_label"],
         "locked_rounding": winner_run["rounding_mode"],
+        "sheetArchiveMeta": {
+            "historyRawRows": hist_bundle["rawRowCount"],
+            "historyWeekdayRows": hist_bundle["weekdayRowCount"],
+            "historyPricedRows": hist_bundle["pricedRowCount"],
+            "signalsRawRows": sig_bundle["rawRowCount"],
+            "signalsWeekdayRows": sig_bundle["weekdayRowCount"],
+            "minDate": hist_bundle["minDate"],
+            "maxDate": hist_bundle["maxDate"],
+        },
         "frozen_cfg": winner_run["frozen_cfg"],
         "subsetViolations": winner_run["subset_violations"],
         "lookAheadLeakage": winner_run["lookahead_leakage"],
@@ -1205,12 +1156,14 @@ def run_full_pipeline() -> dict[str, Any]:
         "max_sig_sums": winner_run["max_sig_sums"],
         "lock3_rate_pct": winner_run["lock3_rate_pct"],
         "lock3_peak_rate_pct": winner_run["lock3_peak_rate_pct"],
+        "all3_agree_rate_pct": winner_run["all3_agree_rate_pct"],
         "veto_counts": winner_run["veto_counts"],
         "splits": winner_run["splits"],
         "versionComparison": {
             "v1": v1_splits,
             "v3": v3_splits,
-            "v4": winner_run["splits"],
+            "v4": v4_splits,
+            "v5": winner_run["splits"],
         },
     }
     with open(os.path.join(DATA_DIR, "xauusd_backtest_summary.json"), "w", encoding="utf-8") as f:
@@ -1219,14 +1172,13 @@ def run_full_pipeline() -> dict[str, Any]:
     with open(os.path.join(DATA_DIR, "xauusd_predictions_2012_2026.json"), "w", encoding="utf-8") as f:
         json.dump(winner_run["rows"], f, ensure_ascii=False, indent=2)
 
-    # Export compact newest-first history shard for `/api/signals/history` (keeps web worker < 85 MiB RSS)
     compact_history = [_build_compact_history_row(r) for r in reversed(winner_run["rows"])]
     with open(os.path.join(DATA_DIR, "xauusd_history_shard.json"), "w", encoding="utf-8") as f:
         json.dump(compact_history, f, ensure_ascii=False)
 
     shard_payload = {
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.2.0",
+        "version": PIPELINE_VERSION,
         "anchor": LOCKED_ANCHOR_KEY,
         "feedSource": "CACHED_VERIFIED_FEED",
         "lastUpdatedUtc": now_iso,
@@ -1240,6 +1192,7 @@ def run_full_pipeline() -> dict[str, Any]:
     with open(os.path.join(DATA_DIR, "xauusd_twin_archive.pkl"), "wb") as pf:
         pickle.dump(
             {
+                "version": PIPELINE_VERSION,
                 "latest_rec": latest_rec,
                 "archive_before_latest": winner_run["archive_before_latest"],
                 "archive_full": winner_run["archive_full"],
@@ -1254,7 +1207,7 @@ def run_full_pipeline() -> dict[str, Any]:
     with open(os.path.join(DATA_DIR, "latest_xauusd_signal.json"), "w", encoding="utf-8") as f:
         json.dump(shard_payload, f, ensure_ascii=False, indent=2)
 
-    print_v4_report(winner_run, live_card, next_card, v1_splits, v3_splits)
+    print_v5_report(winner_run, live_card, next_card)
     return {
         "summary": summary_export,
         "live_card": live_card,

@@ -104,15 +104,20 @@
       container.innerHTML = tiers
         .map(([tk, label]) => {
           const m = splitObj[tk] || {};
-          const wr = Number(m.exec_win_rate ?? m.win_rate ?? 0).toFixed(1);
-          const pf = Number(m.exec_pf ?? m.pf ?? 0).toFixed(2);
+          const dWr = Number(m.daily_win_rate ?? m.win_rate ?? 0).toFixed(1);
+          const sWr = Number(m.exec_win_rate ?? 0).toFixed(1);
+          const dPf = Number(m.daily_pf ?? m.pf ?? 0).toFixed(2);
+          const sPf = Number(m.exec_pf ?? 0).toFixed(2);
           const n = m.n ?? 0;
           const exp = fmtSignedUsd(m.exec_exp_usd ?? m.expectancy_usd ?? 0);
           return `
             <div class="bench-tier-cell">
-              <span class="bt-lbl ltr-num">${label}</span>
-              <strong class="bt-wr ltr-num">${wr}%</strong>
-              <span class="bt-meta ltr-num">n=${n} • PF ${pf} • ${exp}</span>
+              <span class="bt-lbl ltr-num">${label} (n=${n})</span>
+              <div class="bt-dual-row">
+                <strong class="bt-daily-wr ltr-num" title="برد هدف روزانه بدون استاپ تنگ (KXGOLDPERP)">${dWr}%</strong>
+                <span class="bt-step-wr ltr-num" title="برد اجرایی با استاپ پله‌ای 0.85 ATR">SL: ${sWr}%</span>
+              </div>
+              <span class="bt-meta ltr-num">PF ${dPf}/${sPf} • ${exp}</span>
             </div>
           `;
         })
@@ -126,8 +131,9 @@
     $("inv-subset").textContent = `✓ سلسله‌مراتب C ⊂ B ⊂ A (خطا: ${summary.subsetViolations ?? 0})`;
     $("inv-leakage").textContent = `✓ نشت داده آینده: ${summary.lookAheadLeakage ?? 0} (Zero-Leakage)`;
     $("inv-distinct").textContent = `✓ تمایز راستر ۸×۸: ${summary.distinct8v8RosterPct ?? 100}٪`;
+    const ms = summary.max_sig_sums || {};
     $("inv-pricefree").textContent = summary.priceFreeTwinSignature
-      ? "✓ امضای ۱۲ ستونی ۱۰۰٪ مستقل از قیمت"
+      ? `✓ ماتریس غنی شیت ۱۲ ستونی (PRIM ${ms.PRIM ?? 32} / FINAL ${ms.FINAL ?? 24} / ELE-P ${ms.ELE_P ?? 10})`
       : "⚠ بررسی امضای ۱۲ ستونی";
   }
 
@@ -140,7 +146,7 @@
       banner.classList.add("future-banner");
       const note =
         card.futureProjectionNoteFa ||
-        `پیشبینی تاریخ آتی (${card.sessionDate}) — نقشه نجومی دوقطبی ۱۸:۰۰ نیویورک و همزادهای ۱۲ ستونی دقیق برای این تاریخ محاسبه شده‌اند.`;
+        `پیشبینی تاریخ آتی (${card.sessionDate}) — ماتریس ۱۲ ستونی شیت طلا و انتخابگر هوشمند ۳ روشه برای این تاریخ محاسبه شده‌اند.`;
       banner.innerHTML = `
         <div class="outcome-banner-main">
           <strong>🔮 پیشبینی تاریخ آتی</strong>
@@ -152,15 +158,23 @@
 
     if (card.isHistorical && card.hitOutcome) {
       const isActionable = Boolean(card.isA);
-      const isWin = Boolean(card.execWin);
-      banner.classList.add(!isActionable ? "hold-banner" : isWin ? "win-banner" : "loss-banner");
-      const chipCls = !isActionable ? "hold" : isWin ? "win" : "loss";
-      const execPnlStr = isActionable && card.execPnl !== null && card.execPnl !== undefined
-        ? fmtSignedUsd(card.execPnl)
-        : "بدون ورود (0.00$)";
-      const moveStr = card.actualMove !== null && card.actualMove !== undefined
-        ? `${fmtSignedUsd(card.actualMove)} (${card.actualDir || "FLAT"})`
-        : "—";
+      const isDailyWin = Boolean(card.dailyTargetWin);
+      const isExecWin = Boolean(card.execWin);
+      banner.classList.add(!isActionable ? "hold-banner" : isDailyWin ? "win-banner" : "loss-banner");
+      const chipCls = !isActionable ? "hold" : isExecWin ? "win" : "loss";
+      const dailyChip = !isActionable
+        ? `<span class="outcome-chip hold">HOLD</span>`
+        : isDailyWin
+        ? `<span class="outcome-chip win">✓ برد روزانه (${fmtSignedUsd(card.dailyTargetPnl ?? card.rawClosePnl ?? 0)})</span>`
+        : `<span class="outcome-chip loss">✗ باخت روزانه (${fmtSignedUsd(card.dailyTargetPnl ?? card.rawClosePnl ?? 0)})</span>`;
+      const execPnlStr =
+        isActionable && card.execPnl !== null && card.execPnl !== undefined
+          ? fmtSignedUsd(card.execPnl)
+          : "بدون ورود ($0.00)";
+      const moveStr =
+        card.actualMove !== null && card.actualMove !== undefined
+          ? `${fmtSignedUsd(card.actualMove)} (${card.actualDir || "FLAT"})`
+          : "—";
       const rangeStr =
         card.actualHigh !== undefined && card.actualLow !== undefined
           ? `High ${fmtUsd(card.actualHigh)} / Low ${fmtUsd(card.actualLow)} / Close ${fmtUsd(card.actualClose)}`
@@ -168,9 +182,10 @@
 
       banner.innerHTML = `
         <div class="outcome-banner-main">
-          <strong>نتیجه واقعی کندل (${card.sessionDate}):</strong>
-          <span class="outcome-chip ${chipCls}">${card.hitOutcome}</span>
-          <span>سود-زیان اجرایی: <strong class="ltr-num ${!isActionable ? "" : isWin ? "pos-res" : "neg-res"}">${execPnlStr}</strong></span>
+          <strong>نتیجه واقعی سشن (${card.sessionDate}):</strong>
+          ${dailyChip}
+          <span class="outcome-chip ${chipCls}">پله‌ای: ${card.hitOutcome}</span>
+          <span>سود/زیان استاپ پله‌ای: <strong class="ltr-num ${!isActionable ? "" : isExecWin ? "pos-res" : "neg-res"}">${execPnlStr}</strong></span>
         </div>
         <div class="outcome-banner-details">
           <span>حرکت واقعی بازار: <strong class="ltr-num">${moveStr}</strong></span>
@@ -379,6 +394,81 @@
     $("tbody-away-roster").innerHTML = buildRows(awayPlayers);
   }
 
+  function renderThreeMethodBar(card) {
+    if (!card) return;
+    const tc = card.twinConsensus || {};
+    const m3 = card.threeMethodComparison || tc.threeMethodComparison || {};
+    const modeNum = Number(m3.consensusMode || tc.consensusMode || 3);
+
+    const modePill = $("m3-mode-pill");
+    if (modePill) {
+      modePill.className = `m3-mode-pill mode-${modeNum}`;
+      modePill.textContent = m3.consensusBadgeFa || tc.consensusBadgeFa || "حالت ۳: انتخاب هوشمند قفل غالب";
+    }
+
+    const selPill = $("m3-selected-pill");
+    if (selPill) {
+      selPill.textContent = `روش منتخب: ${m3.selectedLabelFa || tc.selectedMethodFa || "🔒 قفل سه‌لایه"}`;
+    }
+
+    const reasonEl = $("m3-rule-reason");
+    if (reasonEl) {
+      reasonEl.textContent = m3.ruleReasonFa || tc.ruleReasonFa || "";
+    }
+
+    const grid = $("method3-cards-grid");
+    if (!grid) return;
+
+    const methodItems = [
+      ["geo", m3.geo || { method: "GEO", labelFa: "اول GEO", n: 0, ups: 0, dns: 0, winPct: 50, dir: "TIE" }],
+      ["step", m3.step || { method: "STEP", labelFa: "گام‌به‌گام", n: 0, ups: 0, dns: 0, winPct: 50, dir: "TIE" }],
+      ["lock3", m3.lock3 || { method: "LOCK3", labelFa: "🔒 قفل سه‌لایه", n: 0, ups: 0, dns: 0, winPct: 50, dir: "TIE" }],
+    ];
+
+    grid.innerHTML = methodItems
+      .map(([, mr]) => {
+        const isSel = Boolean(mr.selected);
+        const ups = Number(mr.ups || 0);
+        const dns = Number(mr.dns || 0);
+        const tot = Math.max(1, ups + dns);
+        const upPct = ((ups / tot) * 100).toFixed(1);
+        const dnPct = (100 - Number(upPct)).toFixed(1);
+        const dirCls = mr.dir === "XAU" ? "bull" : mr.dir === "USD" ? "bear" : "tie";
+        const dirLbl =
+          mr.dir === "XAU" ? "▲ صعودی (LONG XAU)" : mr.dir === "USD" ? "▼ نزولی (SHORT XAU)" : "⚖ تساوی (TIE)";
+
+        let extraMeta = `حاشیه: ${mr.margin ?? 0}`;
+        if (mr.lockElem) {
+          const em = ELEM_META[mr.lockElem] || ELEM_META.FIRE;
+          extraMeta = `ستون: ${em.icon} ${em.fa} • لایه مثبت: ${mr.posLayers ?? 0}/3`;
+        } else if (mr.realPfSteps !== undefined) {
+          extraMeta = `حاشیه: ${mr.margin ?? 0} • گام اصلی: ${mr.realPfSteps}`;
+        }
+
+        return `
+          <div class="m3-card ${isSel ? "selected-method" : ""}">
+            <div class="m3-card-top">
+              <span class="m3-card-title">${mr.labelFa || mr.method}</span>
+              ${isSel ? `<span class="m3-pick-badge">✓ روش منتخب</span>` : `<span class="ltr-num" style="font-size:0.72rem;color:var(--text-muted)">${mr.method}</span>`}
+            </div>
+            <div class="m3-card-mid">
+              <span class="m3-dir ${dirCls}">${dirLbl}</span>
+              <strong class="m3-wp ltr-num">${Number(mr.winPct || 50).toFixed(1)}%</strong>
+            </div>
+            <div class="m3-bar">
+              <div class="m3-bar-up" style="width:${upPct}%"></div>
+              <div class="m3-bar-dn" style="width:${dnPct}%"></div>
+            </div>
+            <div class="m3-card-foot">
+              <span class="ltr-num">${ups} XAU - ${dns} USD (n=${mr.n ?? 0})</span>
+              <span>${extraMeta}</span>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
   function renderTwinsExplorer(card) {
     if (!card) return;
     const sig = card.signature12Col || {};
@@ -389,13 +479,16 @@
     const elemOrder = ["FIRE", "AIR", "WATER", "EARTH"];
 
     const badges = [];
+    if (tc.all3Agree) {
+      badges.push(`<span class="tw-badge emerald">✨ حالت ۱: اجماع کامل هر ۳ روش</span>`);
+    }
     if (tc.lock3Peak) {
       badges.push(`<span class="tw-badge gold">🔒 LOCK3_PEAK فعال (${(tc.lock3Cols || []).join(", ")})</span>`);
     } else if (tc.hasLock3) {
-      badges.push(`<span class="tw-badge gold">🔒 قفل ستونی LOCK3 (${(tc.lock3Cols || []).join(", ")})</span>`);
+      badges.push(`<span class="tw-badge gold">🔒 قفل ستونی (${(tc.lock3Cols || []).join(", ")})</span>`);
     }
     if (tc.inGoldenZone) {
-      badges.push(`<span class="tw-badge emerald">✨ ناحیه طلایی (Golden Zone)</span>`);
+      badges.push(`<span class="tw-badge emerald">✨ ناحیه طلایی (≥66%)</span>`);
     }
     if (tc.decan11) {
       badges.push(`<span class="tw-badge emerald">✓ هم‌فازی دکان و حاکم (1/1)</span>`);
@@ -405,7 +498,17 @@
     }
     $("twin-header-badges").innerHTML = badges.join("") || `<span class="tw-badge">پالایش پیش‌رونده ۱۲ ستونی</span>`;
 
+    const srcLbl = $("sig-source-lbl");
+    if (srcLbl) {
+      srcLbl.textContent =
+        sig.source === "GOOGLE_SHEET" ? "شیت رسمی ۲۰۱۲–۲۰۲۷" : "محاسبه نجومی ۱۲ سیاره (Fallback)";
+    }
     $("sig-zero-elep").textContent = `zeroElepCnt: ${sig.zeroElepCnt ?? 0}`;
+
+    const selTag = $("tw-selected-tag");
+    if (selTag) {
+      selTag.textContent = `${tc.selectedMethodFa || tc.selectedMethod || "LOCK3"} (${tc.selectedMethod || "LOCK3"})`;
+    }
 
     const prim = sig.PRIM_FAWE || [0, 0, 0, 0];
     const fin = sig.FINAL_FAWE || [0, 0, 0, 0];
@@ -498,6 +601,7 @@
     }
     renderHeroAndCard(card);
     renderRosters(card);
+    renderThreeMethodBar(card);
     renderTwinsExplorer(card);
     syncHeaderSelectionUI(card);
   }
@@ -544,10 +648,12 @@
     $("ledger-count-badge").textContent = `نمایش ${data.items.length} از ${data.totalMatched} سشن`;
 
     const kpi = data.kpi || {};
-    $("lkpi-trades").textContent = `${kpi.trades ?? 0} (${kpi.execWins ?? 0}W-${kpi.execLosses ?? 0}L)`;
+    $("lkpi-trades").textContent = `${kpi.trades ?? 0} (${kpi.dailyWins ?? 0}W-${kpi.dailyLosses ?? 0}L)`;
+    if ($("lkpi-daily-wr")) {
+      $("lkpi-daily-wr").textContent = `${Number(kpi.dailyWinRatePct ?? 0).toFixed(2)}%`;
+    }
     $("lkpi-exec-wr").textContent = `${Number(kpi.execWinRatePct ?? 0).toFixed(2)}%`;
-    $("lkpi-raw-wr").textContent = `${Number(kpi.rawWinRatePct ?? 0).toFixed(2)}%`;
-    $("lkpi-pf").textContent = Number(kpi.profitFactor ?? 0).toFixed(2);
+    $("lkpi-pf").textContent = `${Number(kpi.dailyProfitFactor ?? 0).toFixed(2)} / ${Number(kpi.profitFactor ?? 0).toFixed(2)}`;
     $("lkpi-exp").textContent = fmtSignedUsd(kpi.expectancyUsd ?? 0);
     $("lkpi-tps").textContent = `${Number(kpi.tp1HitRatePct ?? 0).toFixed(0)}% / ${Number(kpi.tp2HitRatePct ?? 0).toFixed(0)}% / ${Number(kpi.tp3HitRatePct ?? 0).toFixed(0)}%`;
 
@@ -557,6 +663,8 @@
       .map((r) => {
         const wdFa = WEEKDAY_FA[r.weekday] || r.weekday;
         const badgeCls = !r.isA ? "hold" : r.execWin ? "win" : "loss";
+        const dailyCls = !r.isA ? "hold" : r.dailyTargetWin ? "win" : "loss";
+        const dailyTxt = !r.isA ? "HOLD" : r.dailyTargetWin ? "✓ WIN" : "✗ LOSS";
         const pnlCls = !r.isA ? "" : Number(r.execPnl) >= 0 ? "pos-res" : "neg-res";
         const pnlTxt = !r.isA ? "—" : fmtSignedUsd(r.execPnl);
         const flipMini = r.polarityFlipped ? `<span class="mini-flip-tag" title="چرخش قطبیت فعال">🔄 قطبیت</span>` : "";
@@ -567,19 +675,22 @@
             ? `<span class="neg-res ltr-num">▼ SHORT XAU</span> ${flipMini}`
             : `<span class="ltr-num">🛡️ HOLD (${r.biasDirection})</span> ${flipMini}`;
         const selCls = r.date === curActiveDate ? "selected-ledger-row" : "";
+        const mthPillCls = r.all3Agree ? "method-mini-pill all3" : "method-mini-pill";
+        const modeShort = r.all3Agree ? "حالت ۱ ✨" : `حالت ${r.consensusMode || 2}`;
+        const mthCell = `<span class="${mthPillCls}">${r.selectedMethodFa || r.selectedMethod || "LOCK3"} • ${modeShort}</span>`;
 
         return `
           <tr class="clickable-ledger-row ${selCls}" data-date="${r.date}" title="کلیک برای بارگذاری کامل رادار تاریخ ${r.date}">
             <td><strong class="ltr-num">🔍 ${r.date}</strong></td>
             <td>${wdFa}</td>
-            <td><span class="ltr-num">${r.split}</span></td>
-            <td><span class="ltr-num">${r.macroRegime}</span></td>
+            <td>${mthCell}</td>
             <td><span class="ltr-num">${r.tierBadge} (${Number(r.kellyMultiplier).toFixed(2)}x)</span></td>
             <td>${sigTxt}</td>
             <td class="ltr-num">${Number(r.winProbPct).toFixed(1)}%</td>
             <td class="ltr-num">${fmtUsd(r.entryPrice)} / ${fmtUsd(r.sl)}</td>
             <td class="ltr-num">${fmtUsd(r.tp1)} • ${fmtUsd(r.tp2)} • ${fmtUsd(r.tp3)}</td>
             <td class="ltr-num">${fmtSignedUsd(r.actualMove)} (${r.actualDir})</td>
+            <td><span class="outcome-chip ${dailyCls}">${dailyTxt}</span></td>
             <td><span class="outcome-chip ${badgeCls}">${r.outcomeBadge}</span></td>
             <td><strong class="ltr-num ${pnlCls}">${pnlTxt}</strong></td>
           </tr>

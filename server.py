@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-Production FastAPI Microservice for `XAUUSD-FUSION-SIGNAL` (`v4.1.0`) on Port `8080`.
+Production FastAPI Microservice for `XAUUSD-FUSION-SIGNAL` (`v5.0.0`) on Port `8080`.
 
-- Bound to `0.0.0.0:${PORT:-8080}` with `RSS < 150 MiB` (serves precomputed compact JSON shards
-  + O(1) indexed Past/Present/Future Date Engine while bounding transient ephemeris caches).
+- Bound to `0.0.0.0:${PORT:-8080}` with `RSS < 150 MiB` (serves precomputed compact JSON shards,
+  local Google Sheet archive `data/gold_sheet_history.json` & `data/gold_sheet_signals.json`,
+  and O(1) indexed Past/Present/Future Date Engine).
 - Endpoints:
     * `GET  /api/health`
     * `GET  /api/signals/today`
     * `GET  /api/signals/by-date?date=YYYY-MM-DD`  (Past `2012..latest`, Present, & Future `> latest`)
     * `GET  /api/signals/history?limit=120&tier=ALL&day=ALL&q=&split=VAL_OOS`
     * `GET  /api/stats/summary`
-    * `POST /api/refresh`
-    * `GET  /` -> Full Persian RTL Trading Radar, Date Time-Machine & 12-Col Twin Explorer (`static/index.html`)
+    * `POST /api/refresh`  (Re-syncs Google Sheets CSVs + live spot quote)
+    * `GET  /` -> Full Persian RTL Trading Radar, 3-Method Comparison Bar & Date Time-Machine (`static/index.html`)
 """
 from __future__ import annotations
 
@@ -39,7 +40,7 @@ SUMMARY_PATH = os.path.join(DATA_DIR, "xauusd_backtest_summary.json")
 HISTORY_SHARD_PATH = os.path.join(DATA_DIR, "xauusd_history_shard.json")
 ARCHIVE_PKL_PATH = os.path.join(DATA_DIR, "xauusd_twin_archive.pkl")
 
-SERVICE_VERSION = "4.2.0"
+SERVICE_VERSION = "5.0.0"
 
 _STATE_LOCK = threading.Lock()
 _CACHE: dict[str, Any] = {
@@ -97,7 +98,6 @@ def _load_shards_into_memory() -> None:
 
     history_by_date = {str(r["date"]): r for r in history_data if "date" in r}
 
-    # Enrich liveSession in `today_data` with actual historical outcome & prev/next navigation dates
     if today_data and "liveSession" in today_data:
         live_dt = str(today_data["liveSession"].get("sessionDate", ""))
         next_dt = str(today_data.get("nextSessionPreview", {}).get("sessionDate", ""))
@@ -117,6 +117,8 @@ def _load_shards_into_memory() -> None:
             "actualMove": h_live.get("actualMove"),
             "actualDir": h_live.get("actualDir"),
             "hitOutcome": h_live.get("outcomeBadge"),
+            "dailyTargetWin": h_live.get("dailyTargetWin"),
+            "dailyTargetPnl": h_live.get("dailyTargetPnl"),
             "execPnl": h_live.get("execPnl"),
             "execWin": h_live.get("execWin"),
             "rawClosePnl": h_live.get("rawClosePnl"),
@@ -141,11 +143,13 @@ def _load_shards_into_memory() -> None:
                     "nextSessionDate": nxt_d.strftime("%Y-%m-%d"),
                     "modeBadgeFa": "پیشبینی تاریخ آتی",
                     "futureProjectionNoteFa": (
-                        f"پیشبینی تاریخ آتی ({nxt_iso}) — نقشه نجومی دوقطبی ۱۸:۰۰ نیویورک و امضای ۱۲ ستونی دقیق "
-                        f"برای این تاریخ محاسبه شده و سطوح ۸×۸ بر پایه آخرین اسپات لنگر شده‌اند."
+                        f"پیشبینی تاریخ آتی ({nxt_iso}) — ماتریس ۱۲ ستونی شیت رسمی طلا + انتخابگر هوشمند ۳ روشه "
+                        f"(LOCK3 / GEO / STEP) و سطوح ۸×۸ بر پایه آخرین اسپات لنگر شده‌اند."
                     ),
                     "actualMove": None,
                     "hitOutcome": "پیشبینی تاریخ آتی",
+                    "dailyTargetWin": None,
+                    "dailyTargetPnl": None,
                     "execPnl": None,
                 }
             )
@@ -159,14 +163,13 @@ def _load_shards_into_memory() -> None:
 
 
 def _ensure_engine_bundle() -> dict[str, Any]:
-    """Lazily load and cache the compact ~1.5 MB twin archive + daily records index for `/api/signals/by-date`."""
+    """Lazily load and cache the compact twin archive + daily records index for `/api/signals/by-date`."""
     with _STATE_LOCK:
         bundle = _CACHE.get("engine_bundle")
         summary = _CACHE.get("summary")
     if bundle is not None:
         return bundle
 
-    from src.data_loader import build_zero_leakage_daily_records, fetch_and_cache_market_data
     from src.xauusd_gold_cba_engine import FrozenGoldCbaConfig
 
     if summary is None:
@@ -179,29 +182,36 @@ def _ensure_engine_bundle() -> dict[str, Any]:
     records_by_date = None
 
     if os.path.exists(ARCHIVE_PKL_PATH):
-        with open(ARCHIVE_PKL_PATH, "rb") as pf:
-            pk = pickle.load(pf)
-        latest_rec = pk.get("latest_rec")
-        archive_full = pk.get("archive_full")
-        records_by_date = pk.get("records_by_date")
+        try:
+            with open(ARCHIVE_PKL_PATH, "rb") as pf:
+                pk = pickle.load(pf)
+            if pk.get("version") == SERVICE_VERSION:
+                latest_rec = pk.get("latest_rec")
+                archive_full = pk.get("archive_full")
+                records_by_date = pk.get("records_by_date")
+        except Exception:
+            latest_rec = None
+
+    if records_by_date is None or latest_rec is None or archive_full is None:
+        from src.run_pipeline import refresh_live_signal_shard_only
+
+        refresh_live_signal_shard_only(try_network_fetch=False)
+        if os.path.exists(ARCHIVE_PKL_PATH):
+            with open(ARCHIVE_PKL_PATH, "rb") as pf:
+                pk = pickle.load(pf)
+            archive_full = pk["archive_full"]
+            records_by_date = pk.get("records_by_date")
+            latest_rec = pk.get("latest_rec")
 
     if records_by_date is None or latest_rec is None:
+        from src.data_loader import build_zero_leakage_daily_records, fetch_and_cache_market_data
+
         df_daily, _df_1h, df_sess = fetch_and_cache_market_data(force_refresh=False)
         recs = build_zero_leakage_daily_records(df_daily, df_sess)
         records_by_date = {r["date"]: r for r in recs if r["date"] >= "2012-01-01"}
         latest_rec = recs[-1]
         del df_daily, _df_1h, df_sess, recs
         gc.collect()
-
-    if archive_full is None:
-        from src.run_pipeline import refresh_live_signal_shard_only
-
-        refresh_live_signal_shard_only(try_network_fetch=False)
-        with open(ARCHIVE_PKL_PATH, "rb") as pf:
-            pk = pickle.load(pf)
-        archive_full = pk["archive_full"]
-        records_by_date = pk.get("records_by_date", records_by_date)
-        latest_rec = pk.get("latest_rec", latest_rec)
 
     sorted_dates = sorted(records_by_date.keys())
     bundle = {
@@ -217,9 +227,9 @@ def _ensure_engine_bundle() -> dict[str, Any]:
 
 
 app = FastAPI(
-    title="XAUUSD-FUSION-SIGNAL v4.1 Microservice",
+    title="XAUUSD-FUSION-SIGNAL v5.0 Microservice",
     version=SERVICE_VERSION,
-    description="Non-Parametric Twin-First Astro-Elemental-Geomantic Spot Gold Signal Engine with Interactive Date Time-Machine",
+    description="True Sheet-Backed 12-Col Archive + 4-Method Smart Twin Selector (LOCK3/GEO/STEP/LOCK2) + 8v8 S/R Roster Fusion",
 )
 
 app.add_middleware(
@@ -270,12 +280,7 @@ def api_signals_by_date(
     date: str = Query(..., description="Target date in YYYY-MM-DD format (Past 2012..latest, Present, or Future)"),
 ) -> dict[str, Any]:
     """
-    Dynamically evaluate ANY requested date (`2012-01-01` .. `2035-12-31`):
-      - Auto-snaps weekend / market-holiday dates to the nearest trading session.
-      - Historical dates (`<= latest_bar`): full radar payload + strictly causal `matchedTwins < sessionDate`
-        + actual candle & chronological execution outcomes (`actualMove`, `hitOutcome`, `execPnl`).
-      - Future dates (`> latest_bar`): exact `18:00 America/New_York (D-1)` Dual-Pole ephemeris, `12-Col`
-        signature, `matchedTwins (< latest_bar)`, and projected `8v8` S/R levels (`پیشبینی تاریخ آتی`).
+    Dynamically evaluate ANY requested date (`2012-01-01` .. `2035-12-31`) with strict `hist_date < sessionDate`.
     """
     from src.astro_ephemeris_engine import _DATE_CTX_CACHE, _SNAP_CACHE
     from src.price_roster_engine import _POLE_RES_CACHE
@@ -301,7 +306,6 @@ def api_signals_by_date(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     finally:
-        # Bound transient lookup caches so RSS stays flat (< 95 MiB) across unlimited date queries
         if len(_SNAP_CACHE) > 48:
             _SNAP_CACHE.clear()
         if len(_DATE_CTX_CACHE) > 128:
@@ -351,24 +355,35 @@ def api_signals_history(
             continue
 
         if q_s:
-            hay = f"{r.get('date', '')} {r.get('weekday', '')} {r.get('direction', '')} {r.get('outcomeBadge', '')}".lower()
+            hay = (
+                f"{r.get('date', '')} {r.get('weekday', '')} {r.get('direction', '')} "
+                f"{r.get('outcomeBadge', '')} {r.get('selectedMethod', '')} {r.get('consensusBadgeFa', '')}"
+            ).lower()
             if q_s not in hay:
                 continue
 
         filtered.append(r)
 
     active_trades = [
-        r for r in filtered
+        r
+        for r in filtered
         if (r.get("isA") if tier_u not in ("HOLD", "VETO", "VETOED") else True)
         and r.get("actualDir") in ("XAU", "USD")
     ]
     n_trd = len(active_trades)
     if n_trd > 0:
+        daily_wins = sum(1 for r in active_trades if r.get("dailyTargetWin", r.get("rawCloseWin")))
         exec_wins = sum(1 for r in active_trades if r.get("execWin"))
         raw_wins = sum(1 for r in active_trades if r.get("rawCloseWin"))
         tp1_hits = sum(1 for r in active_trades if r.get("hitTp1"))
         tp2_hits = sum(1 for r in active_trades if r.get("hitTp2"))
         tp3_hits = sum(1 for r in active_trades if r.get("hitTp3"))
+
+        dpnls = [float(r.get("dailyTargetPnl", r.get("rawClosePnl", 0.0))) for r in active_trades]
+        dgw = sum(p for p in dpnls if p > 0)
+        dgl = abs(sum(p for p in dpnls if p < 0))
+        dpf = round(dgw / dgl, 2) if dgl > 1e-6 else (99.99 if dgw > 0 else 0.0)
+
         pnls = [float(r.get("execPnl", 0.0)) for r in active_trades]
         gw = sum(p for p in pnls if p > 0)
         gl = abs(sum(p for p in pnls if p < 0))
@@ -376,6 +391,11 @@ def api_signals_history(
         exp_usd = round(sum(pnls) / n_trd, 2)
         kpi = {
             "trades": n_trd,
+            "dailyWins": daily_wins,
+            "dailyLosses": n_trd - daily_wins,
+            "dailyWinRatePct": round(daily_wins * 100.0 / n_trd, 2),
+            "dailyProfitFactor": dpf,
+            "dailyExpectancyUsd": round(sum(dpnls) / n_trd, 2),
             "execWins": exec_wins,
             "execLosses": n_trd - exec_wins,
             "execWinRatePct": round(exec_wins * 100.0 / n_trd, 2),
@@ -390,6 +410,11 @@ def api_signals_history(
     else:
         kpi = {
             "trades": 0,
+            "dailyWins": 0,
+            "dailyLosses": 0,
+            "dailyWinRatePct": 0.0,
+            "dailyProfitFactor": 0.0,
+            "dailyExpectancyUsd": 0.0,
             "execWins": 0,
             "execLosses": 0,
             "execWinRatePct": 0.0,
@@ -432,9 +457,8 @@ def api_stats_summary() -> dict[str, Any]:
 @app.post("/api/refresh")
 def api_refresh() -> dict[str, Any]:
     """
-    Pull latest live `XAUUSD` & `DXY` bars (with graceful offline/cache fallback),
-    atomically refresh `shards/latest_xauusd_signals.json`, purge transient caches,
-    and update in-memory state while keeping `RSS < 150 MiB`.
+    Re-sync Google Sheets CSVs (`HISTORY_CSV` & `SIGNALS_CSV`), pull latest live `XAUUSD` quote,
+    atomically refresh `shards/latest_xauusd_signals.json`, and purge transient caches (`RSS < 150 MiB`).
     """
     from src.astro_ephemeris_engine import _DATE_CTX_CACHE, _SNAP_CACHE
     from src.price_roster_engine import _POLE_RES_CACHE
@@ -443,6 +467,9 @@ def api_refresh() -> dict[str, Any]:
     try:
         fresh_shard = refresh_live_signal_shard_only(try_network_fetch=True)
         _atomic_write_json(LATEST_SHARD_PATH, fresh_shard)
+        with _STATE_LOCK:
+            if fresh_shard.get("sheetsSynced"):
+                _CACHE["engine_bundle"] = None
         _load_shards_into_memory()
         with _STATE_LOCK:
             updated_today = _CACHE["today"] or fresh_shard

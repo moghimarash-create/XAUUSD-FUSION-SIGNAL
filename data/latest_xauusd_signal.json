@@ -1,9 +1,9 @@
 {
   "service": "XAUUSD-FUSION-SIGNAL",
-  "version": "4.2.0",
+  "version": "5.0.0",
   "anchor": "ANCHOR_DUAL_POLE_1800",
   "feedSource": "CACHED_VERIFIED_FEED",
-  "lastUpdatedUtc": "2026-11-27T07:47:36Z",
+  "lastUpdatedUtc": "2026-11-27T09:28:25Z",
   "sessionDate": "2026-11-26",
   "weekday": "Thursday",
   "candleOpenUtc": "2026-11-25T23:00:00Z",
@@ -27,55 +27,55 @@
   "polarityFlipBadgeFa": "",
   "polarityFlipReasonFa": "",
   "f1ArcanumElement": "AIR",
-  "winProbPct": 89.5,
+  "winProbPct": 89.1,
   "kellyMultiplier": 1.2,
   "entryPrice": 3619.8,
-  "sl": 3699.98,
-  "tp1": 3577.52,
-  "tp2": 3515.88,
-  "tp3": 3463.12,
-  "rrRatio": 0.53,
+  "sl": 3704.46,
+  "tp1": 3591.75,
+  "tp2": 3569.31,
+  "tp3": 3530.6,
+  "rrRatio": 0.6,
   "vetoReasons": [],
   "vetoShield6": [
     {
-      "code": "V1_ZERO_ELEP_TRAP",
-      "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-      "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
+      "code": "V1_TIE_5050_NOISE",
+      "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+      "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
       "triggered": false,
       "statusFa": "✓ عبور ایمن"
     },
     {
       "code": "V2_TRAP_100",
       "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-      "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+      "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
       "triggered": false,
       "statusFa": "✓ عبور ایمن"
     },
     {
       "code": "V3_FORMULA_TWIN_DIVERGENCE",
       "titleFa": "واگرایی شدید همزاد و راستر",
-      "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+      "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
       "triggered": false,
       "statusFa": "✓ عبور ایمن"
     },
     {
       "code": "V4_DECAN_00_CONFLICT",
       "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-      "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+      "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
       "triggered": false,
       "statusFa": "✓ عبور ایمن"
     },
     {
       "code": "V5_BOXED_SR_COMPRESSION",
       "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-      "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+      "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
       "triggered": false,
       "statusFa": "✓ عبور ایمن"
     },
     {
       "code": "V6_COUNTER_MACRO_TREND",
       "titleFa": "سپر روند کلان (Macro Regime Shield)",
-      "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
+      "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
       "triggered": false,
       "statusFa": "✓ عبور ایمن"
     }
@@ -88,36 +88,95 @@
     "bullStrikeAbove": 3600.0,
     "bearStrikeBelow": 3625.0,
     "coreRangeBand": "$3,550 – $3,700",
-    "invalidationLevel": 3699.98,
-    "impliedAboveOpenProbPct": 10.5,
+    "invalidationLevel": 3704.46,
+    "impliedAboveOpenProbPct": 10.9,
     "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
+  },
+  "threeMethodComparison": {
+    "geo": {
+      "method": "GEO",
+      "labelFa": "اول GEO",
+      "selected": false,
+      "n": 4,
+      "ups": 0,
+      "dns": 4,
+      "votes": "0 XAU - 4 USD",
+      "winPct": 100.0,
+      "margin": 4,
+      "minr": 0,
+      "dir": "USD",
+      "dirFa": "نزولی (SHORT)",
+      "realPfSteps": 3
+    },
+    "step": {
+      "method": "STEP",
+      "labelFa": "گام‌به‌گام",
+      "selected": false,
+      "n": 6,
+      "ups": 1,
+      "dns": 5,
+      "votes": "1 XAU - 5 USD",
+      "winPct": 83.3,
+      "margin": 4,
+      "minr": 1,
+      "dir": "USD",
+      "dirFa": "نزولی (SHORT)",
+      "realPfSteps": 4
+    },
+    "lock3": {
+      "method": "LOCK3",
+      "labelFa": "🔒 قفل سه‌لایه",
+      "selected": true,
+      "n": 5,
+      "ups": 1,
+      "dns": 4,
+      "votes": "1 XAU - 4 USD",
+      "winPct": 80.0,
+      "margin": 3,
+      "minr": 1,
+      "dir": "USD",
+      "dirFa": "نزولی (SHORT)",
+      "lockElem": "EARTH",
+      "posLayers": 3,
+      "dec11": true,
+      "dec00": false,
+      "baseTag": "GEO"
+    },
+    "selectedMethod": "LOCK3",
+    "selectedLabelFa": "🔒 قفل سه‌لایه",
+    "all3Agree": true,
+    "consensusMode": 1,
+    "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+    "ruleReason": "R4_LOCK3_PRIMARY",
+    "ruleReasonFa": "حاکمیت قفل سه‌لایه ستونی (LOCK3: تطابق هم‌زمان PRIM + FINAL + ELE-P)"
   },
   "signature12Col": {
     "priceFree": true,
+    "source": "GOOGLE_SHEET",
     "PRIM_FAWE": [
-      3,
-      4,
       0,
-      5
+      5,
+      4,
+      10
     ],
     "FINAL_FAWE": [
-      3,
-      1,
       0,
-      4
+      4,
+      3,
+      7
     ],
     "ELEP_FAWE": [
-      1,
-      1,
       0,
-      2
+      1,
+      1,
+      3
     ],
     "zeroElepCnt": 1,
-    "GEO_FIG": "1001 (Carcer)",
-    "geoCode": "1001",
-    "geoName": "Carcer",
-    "DEC_GEO": "1010",
-    "RULER_GEO": "1010",
+    "GEO_FIG": "0100 (Albus)",
+    "geoCode": "0100",
+    "geoName": "Albus",
+    "DEC_GEO": "1011",
+    "RULER_GEO": "0101",
     "step3Hits": [
       "F1:ChironS2->F",
       "F2:ChironbQ->E",
@@ -1022,134 +1081,161 @@
   },
   "matchedTwins": [
     {
-      "date": "2014-07-24",
+      "date": "2020-07-16",
       "weekday": "Thursday",
       "direction": "USD",
-      "move_usd": -6.9,
-      "move_atr": 0.52,
-      "col12_matches": 6,
-      "decan_sim": 1.35,
-      "weight": 0.089
-    },
-    {
-      "date": "2014-08-14",
-      "weekday": "Thursday",
-      "direction": "XAU",
-      "move_usd": 2.1,
-      "move_atr": 0.17,
-      "col12_matches": 8,
-      "decan_sim": 1.35,
-      "weight": 0.029
-    },
-    {
-      "date": "2015-02-05",
-      "weekday": "Thursday",
-      "direction": "USD",
-      "move_usd": -9.8,
+      "move_usd": -12.92,
       "move_atr": 0.51,
-      "col12_matches": 5,
-      "decan_sim": 1.0,
-      "weight": 0.071
-    },
-    {
-      "date": "2017-03-02",
-      "weekday": "Thursday",
-      "direction": "USD",
-      "move_usd": -15.3,
-      "move_atr": 1.23,
-      "col12_matches": 4,
-      "decan_sim": 1.0,
-      "weight": 0.244
-    },
-    {
-      "date": "2017-11-30",
-      "weekday": "Thursday",
-      "direction": "USD",
-      "move_usd": -9.9,
-      "move_atr": 0.92,
-      "col12_matches": 4,
-      "decan_sim": 1.0,
-      "weight": 0.206
-    },
-    {
-      "date": "2018-07-26",
-      "weekday": "Thursday",
-      "direction": "USD",
-      "move_usd": -2.5,
-      "move_atr": 0.28,
       "col12_matches": 8,
-      "decan_sim": 1.35,
-      "weight": 0.094
+      "decan_sim": 0.91,
+      "weight": 0.147
     },
     {
-      "date": "2020-03-12",
+      "date": "2021-06-03",
       "weekday": "Thursday",
       "direction": "USD",
-      "move_usd": -47.7,
-      "move_atr": 1.67,
-      "col12_matches": 5,
-      "decan_sim": 1.0,
-      "weight": 0.545
+      "move_usd": -37.81,
+      "move_atr": 1.65,
+      "col12_matches": 7,
+      "decan_sim": 1.09,
+      "weight": 0.662
     },
     {
-      "date": "2021-03-25",
-      "weekday": "Thursday",
-      "direction": "USD",
-      "move_usd": -8.1,
-      "move_atr": 0.3,
-      "col12_matches": 5,
-      "decan_sim": 1.0,
-      "weight": 0.116
-    },
-    {
-      "date": "2024-10-24",
+      "date": "2024-02-01",
       "weekday": "Thursday",
       "direction": "XAU",
-      "move_usd": 19.7,
-      "move_atr": 0.6,
-      "col12_matches": 5,
-      "decan_sim": 0.82,
-      "weight": 0.351
+      "move_usd": 15.67,
+      "move_atr": 0.63,
+      "col12_matches": 7,
+      "decan_sim": 1.0,
+      "weight": 0.377
+    },
+    {
+      "date": "2025-06-19",
+      "weekday": "Thursday",
+      "direction": "USD",
+      "move_usd": -1.03,
+      "move_atr": 0.08,
+      "col12_matches": 6,
+      "decan_sim": 0.91,
+      "weight": 0.056
+    },
+    {
+      "date": "2025-09-11",
+      "weekday": "Thursday",
+      "direction": "USD",
+      "move_usd": -10.35,
+      "move_atr": 0.2,
+      "col12_matches": 7,
+      "decan_sim": 1.0,
+      "weight": 0.164
     }
   ],
   "twinConsensus": {
-    "twinCount": 9,
-    "upTwins": 2,
-    "downTwins": 7,
-    "votes": "2 XAU - 7 USD (77.8%)",
-    "dispPct": 77.8,
-    "weightedDispPct": 78.2,
-    "twinWinProbPct": 84.0,
-    "strongAvgDominance": true,
-    "majAvgAtrMove": 0.776,
-    "minAvgAtrMove": 0.386,
+    "selectedMethod": "LOCK3",
+    "selectedMethodFa": "🔒 قفل سه‌لایه",
+    "all3Agree": true,
+    "consensusMode": 1,
+    "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+    "ruleReason": "R4_LOCK3_PRIMARY",
+    "ruleReasonFa": "حاکمیت قفل سه‌لایه ستونی (LOCK3: تطابق هم‌زمان PRIM + FINAL + ELE-P)",
+    "threeMethodComparison": {
+      "geo": {
+        "method": "GEO",
+        "labelFa": "اول GEO",
+        "selected": false,
+        "n": 4,
+        "ups": 0,
+        "dns": 4,
+        "votes": "0 XAU - 4 USD",
+        "winPct": 100.0,
+        "margin": 4,
+        "minr": 0,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 3
+      },
+      "step": {
+        "method": "STEP",
+        "labelFa": "گام‌به‌گام",
+        "selected": false,
+        "n": 6,
+        "ups": 1,
+        "dns": 5,
+        "votes": "1 XAU - 5 USD",
+        "winPct": 83.3,
+        "margin": 4,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 4
+      },
+      "lock3": {
+        "method": "LOCK3",
+        "labelFa": "🔒 قفل سه‌لایه",
+        "selected": true,
+        "n": 5,
+        "ups": 1,
+        "dns": 4,
+        "votes": "1 XAU - 4 USD",
+        "winPct": 80.0,
+        "margin": 3,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "lockElem": "EARTH",
+        "posLayers": 3,
+        "dec11": true,
+        "dec00": false,
+        "baseTag": "GEO"
+      },
+      "selectedMethod": "LOCK3",
+      "selectedLabelFa": "🔒 قفل سه‌لایه",
+      "all3Agree": true,
+      "consensusMode": 1,
+      "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+      "ruleReason": "R4_LOCK3_PRIMARY",
+      "ruleReasonFa": "حاکمیت قفل سه‌لایه ستونی (LOCK3: تطابق هم‌زمان PRIM + FINAL + ELE-P)"
+    },
+    "twinCount": 5,
+    "upTwins": 1,
+    "downTwins": 4,
+    "margin": 3,
+    "votes": "1 XAU - 4 USD (80.0%)",
+    "dispPct": 80.0,
+    "weightedDispPct": 73.2,
+    "twinWinProbPct": 84.2,
+    "strongAvgDominance": false,
+    "majAvgAtrMove": 0.611,
+    "minAvgAtrMove": 0.63,
     "inGoldenZone": true,
     "hasLock3": true,
     "lock3Cols": [
-      "FIRE"
+      "EARTH"
     ],
     "lock3Peak": true,
     "highPurityLock3Peak": false,
-    "activeLockElem": "FIRE",
+    "activeLockElem": "EARTH",
+    "posLayers": 3,
     "decan11": true,
     "decan00": false,
     "fp1_4": [
-      0.0308,
-      0.0332,
-      -0.0384,
-      0.0033
+      0.0007,
+      -0.0583,
+      -0.0036,
+      -0.0065
     ],
     "ff1_4": [
-      0.0007,
-      0.0232,
-      0.009,
-      0.0604
+      0.0016,
+      -0.0046,
+      0.0003,
+      0.0235
     ],
-    "gaussScore": 0.0242,
+    "gaussScore": -0.0295,
     "tpAtrs": [
-      0.58,
-      0.926,
-      1.396
+      0.25,
+      0.45,
+      0.795
     ]
   },
   "date": "2026-11-26",
@@ -2143,28 +2229,29 @@
   },
   "signature_12col": {
     "price_free": true,
+    "source": "GOOGLE_SHEET",
     "PRIM_FAWE": [
-      3,
-      4,
       0,
-      5
+      5,
+      4,
+      10
     ],
     "FINAL_FAWE": [
-      3,
-      1,
       0,
-      4
+      4,
+      3,
+      7
     ],
     "ELEP_FAWE": [
-      1,
-      1,
       0,
-      2
+      1,
+      1,
+      3
     ],
     "zeroElepCnt": 1,
-    "GEO_FIG": "1001 (Carcer)",
-    "DEC_GEO": "1010",
-    "RULER_GEO": "1010",
+    "GEO_FIG": "0100 (Albus)",
+    "DEC_GEO": "1011",
+    "RULER_GEO": "0101",
     "step3_hits": [
       "F1:ChironS2->F",
       "F2:ChironbQ->E",
@@ -2179,47 +2266,46 @@
     ]
   },
   "twins_and_gaussian": {
-    "twin_count": 9,
-    "votes": "2 XAU - 7 USD (77.8%)",
-    "w_disp_pct": 78.2,
-    "strong_avg_dominance": true,
+    "selected_method": "LOCK3",
+    "all3_agree": true,
+    "consensus_mode": 1,
+    "twin_count": 5,
+    "votes": "1 XAU - 4 USD (80.0%)",
+    "w_disp_pct": 73.2,
+    "strong_avg_dominance": false,
     "twin_dates": [
-      "2014-07-24",
-      "2014-08-14",
-      "2015-02-05",
-      "2017-03-02",
-      "2017-11-30",
-      "2018-07-26",
-      "2020-03-12",
-      "2021-03-25",
-      "2024-10-24"
+      "2020-07-16",
+      "2021-06-03",
+      "2024-02-01",
+      "2025-06-19",
+      "2025-09-11"
     ],
     "in_golden_zone": true,
     "has_lock3": true,
     "lock3_cols": [
-      "FIRE"
+      "EARTH"
     ],
     "lock3_peak": true,
     "high_purity_lock3_peak": false,
     "decan_11": true,
     "decan_00": false,
     "fp1_4": [
-      0.0308,
-      0.0332,
-      -0.0384,
-      0.0033
+      0.0007,
+      -0.0583,
+      -0.0036,
+      -0.0065
     ],
     "ff1_4": [
-      0.0007,
-      0.0232,
-      0.009,
-      0.0604
+      0.0016,
+      -0.0046,
+      0.0003,
+      0.0235
     ],
-    "gauss_score": 0.0242,
+    "gauss_score": -0.0295,
     "tp_atrs": [
-      0.58,
-      0.926,
-      1.396
+      0.25,
+      0.45,
+      0.795
     ]
   },
   "signal": {
@@ -2242,66 +2328,66 @@
     "tier": "C",
     "tier_badge": "👑 Tier C",
     "kelly_multiplier": 1.2,
-    "win_prob_pct": 89.5,
-    "confidence_pct": 89.5,
-    "rr_ratio": 0.53,
+    "win_prob_pct": 89.1,
+    "confidence_pct": 89.1,
+    "rr_ratio": 0.6,
     "veto_flags": [],
     "veto_primary": "",
     "veto_shield_6": [
       {
-        "code": "V1_ZERO_ELEP_TRAP",
-        "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-        "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
+        "code": "V1_TIE_5050_NOISE",
+        "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+        "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V2_TRAP_100",
         "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-        "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+        "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V3_FORMULA_TWIN_DIVERGENCE",
         "titleFa": "واگرایی شدید همزاد و راستر",
-        "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+        "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V4_DECAN_00_CONFLICT",
         "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V5_BOXED_SR_COMPRESSION",
         "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-        "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+        "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V6_COUNTER_MACRO_TREND",
         "titleFa": "سپر روند کلان (Macro Regime Shield)",
-        "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
+        "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       }
     ],
     "z_a": 0.4732,
     "z_b": -0.6993,
-    "z_c": -1.6698,
-    "comp_ab": 0.3476,
-    "fusion_score": -1.0398,
+    "z_c": -1.3034,
+    "comp_ab": 0.3241,
+    "fusion_score": -0.8969,
     "pillars_aligned": 2,
     "entry": 3619.8,
-    "sl": 3699.98,
-    "tp1": 3577.52,
-    "tp2": 3515.88,
-    "tp3": 3463.12,
+    "sl": 3704.46,
+    "tp1": 3591.75,
+    "tp2": 3569.31,
+    "tp3": 3530.6,
     "kalshi_bracket": {
       "series": "KXGOLD",
       "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -2310,8 +2396,8 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3699.98,
-      "impliedAboveOpenProbPct": 10.5,
+      "invalidationLevel": 3704.46,
+      "impliedAboveOpenProbPct": 10.9,
       "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
     }
   },
@@ -2339,55 +2425,55 @@
     "polarityFlipBadgeFa": "",
     "polarityFlipReasonFa": "",
     "f1ArcanumElement": "AIR",
-    "winProbPct": 89.5,
+    "winProbPct": 89.1,
     "kellyMultiplier": 1.2,
     "entryPrice": 3619.8,
-    "sl": 3699.98,
-    "tp1": 3577.52,
-    "tp2": 3515.88,
-    "tp3": 3463.12,
-    "rrRatio": 0.53,
+    "sl": 3704.46,
+    "tp1": 3591.75,
+    "tp2": 3569.31,
+    "tp3": 3530.6,
+    "rrRatio": 0.6,
     "vetoReasons": [],
     "vetoShield6": [
       {
-        "code": "V1_ZERO_ELEP_TRAP",
-        "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-        "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
+        "code": "V1_TIE_5050_NOISE",
+        "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+        "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V2_TRAP_100",
         "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-        "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+        "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V3_FORMULA_TWIN_DIVERGENCE",
         "titleFa": "واگرایی شدید همزاد و راستر",
-        "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+        "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V4_DECAN_00_CONFLICT",
         "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V5_BOXED_SR_COMPRESSION",
         "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-        "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+        "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V6_COUNTER_MACRO_TREND",
         "titleFa": "سپر روند کلان (Macro Regime Shield)",
-        "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
+        "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       }
@@ -2400,36 +2486,95 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3699.98,
-      "impliedAboveOpenProbPct": 10.5,
+      "invalidationLevel": 3704.46,
+      "impliedAboveOpenProbPct": 10.9,
       "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
+    },
+    "threeMethodComparison": {
+      "geo": {
+        "method": "GEO",
+        "labelFa": "اول GEO",
+        "selected": false,
+        "n": 4,
+        "ups": 0,
+        "dns": 4,
+        "votes": "0 XAU - 4 USD",
+        "winPct": 100.0,
+        "margin": 4,
+        "minr": 0,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 3
+      },
+      "step": {
+        "method": "STEP",
+        "labelFa": "گام‌به‌گام",
+        "selected": false,
+        "n": 6,
+        "ups": 1,
+        "dns": 5,
+        "votes": "1 XAU - 5 USD",
+        "winPct": 83.3,
+        "margin": 4,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 4
+      },
+      "lock3": {
+        "method": "LOCK3",
+        "labelFa": "🔒 قفل سه‌لایه",
+        "selected": true,
+        "n": 5,
+        "ups": 1,
+        "dns": 4,
+        "votes": "1 XAU - 4 USD",
+        "winPct": 80.0,
+        "margin": 3,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "lockElem": "EARTH",
+        "posLayers": 3,
+        "dec11": true,
+        "dec00": false,
+        "baseTag": "GEO"
+      },
+      "selectedMethod": "LOCK3",
+      "selectedLabelFa": "🔒 قفل سه‌لایه",
+      "all3Agree": true,
+      "consensusMode": 1,
+      "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+      "ruleReason": "R4_LOCK3_PRIMARY",
+      "ruleReasonFa": "حاکمیت قفل سه‌لایه ستونی (LOCK3: تطابق هم‌زمان PRIM + FINAL + ELE-P)"
     },
     "signature12Col": {
       "priceFree": true,
+      "source": "GOOGLE_SHEET",
       "PRIM_FAWE": [
-        3,
-        4,
         0,
-        5
+        5,
+        4,
+        10
       ],
       "FINAL_FAWE": [
-        3,
-        1,
         0,
-        4
+        4,
+        3,
+        7
       ],
       "ELEP_FAWE": [
-        1,
-        1,
         0,
-        2
+        1,
+        1,
+        3
       ],
       "zeroElepCnt": 1,
-      "GEO_FIG": "1001 (Carcer)",
-      "geoCode": "1001",
-      "geoName": "Carcer",
-      "DEC_GEO": "1010",
-      "RULER_GEO": "1010",
+      "GEO_FIG": "0100 (Albus)",
+      "geoCode": "0100",
+      "geoName": "Albus",
+      "DEC_GEO": "1011",
+      "RULER_GEO": "0101",
       "step3Hits": [
         "F1:ChironS2->F",
         "F2:ChironbQ->E",
@@ -3334,134 +3479,161 @@
     },
     "matchedTwins": [
       {
-        "date": "2014-07-24",
+        "date": "2020-07-16",
         "weekday": "Thursday",
         "direction": "USD",
-        "move_usd": -6.9,
-        "move_atr": 0.52,
-        "col12_matches": 6,
-        "decan_sim": 1.35,
-        "weight": 0.089
-      },
-      {
-        "date": "2014-08-14",
-        "weekday": "Thursday",
-        "direction": "XAU",
-        "move_usd": 2.1,
-        "move_atr": 0.17,
-        "col12_matches": 8,
-        "decan_sim": 1.35,
-        "weight": 0.029
-      },
-      {
-        "date": "2015-02-05",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -9.8,
+        "move_usd": -12.92,
         "move_atr": 0.51,
-        "col12_matches": 5,
-        "decan_sim": 1.0,
-        "weight": 0.071
-      },
-      {
-        "date": "2017-03-02",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -15.3,
-        "move_atr": 1.23,
-        "col12_matches": 4,
-        "decan_sim": 1.0,
-        "weight": 0.244
-      },
-      {
-        "date": "2017-11-30",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -9.9,
-        "move_atr": 0.92,
-        "col12_matches": 4,
-        "decan_sim": 1.0,
-        "weight": 0.206
-      },
-      {
-        "date": "2018-07-26",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -2.5,
-        "move_atr": 0.28,
         "col12_matches": 8,
-        "decan_sim": 1.35,
-        "weight": 0.094
+        "decan_sim": 0.91,
+        "weight": 0.147
       },
       {
-        "date": "2020-03-12",
+        "date": "2021-06-03",
         "weekday": "Thursday",
         "direction": "USD",
-        "move_usd": -47.7,
-        "move_atr": 1.67,
-        "col12_matches": 5,
-        "decan_sim": 1.0,
-        "weight": 0.545
+        "move_usd": -37.81,
+        "move_atr": 1.65,
+        "col12_matches": 7,
+        "decan_sim": 1.09,
+        "weight": 0.662
       },
       {
-        "date": "2021-03-25",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -8.1,
-        "move_atr": 0.3,
-        "col12_matches": 5,
-        "decan_sim": 1.0,
-        "weight": 0.116
-      },
-      {
-        "date": "2024-10-24",
+        "date": "2024-02-01",
         "weekday": "Thursday",
         "direction": "XAU",
-        "move_usd": 19.7,
-        "move_atr": 0.6,
-        "col12_matches": 5,
-        "decan_sim": 0.82,
-        "weight": 0.351
+        "move_usd": 15.67,
+        "move_atr": 0.63,
+        "col12_matches": 7,
+        "decan_sim": 1.0,
+        "weight": 0.377
+      },
+      {
+        "date": "2025-06-19",
+        "weekday": "Thursday",
+        "direction": "USD",
+        "move_usd": -1.03,
+        "move_atr": 0.08,
+        "col12_matches": 6,
+        "decan_sim": 0.91,
+        "weight": 0.056
+      },
+      {
+        "date": "2025-09-11",
+        "weekday": "Thursday",
+        "direction": "USD",
+        "move_usd": -10.35,
+        "move_atr": 0.2,
+        "col12_matches": 7,
+        "decan_sim": 1.0,
+        "weight": 0.164
       }
     ],
     "twinConsensus": {
-      "twinCount": 9,
-      "upTwins": 2,
-      "downTwins": 7,
-      "votes": "2 XAU - 7 USD (77.8%)",
-      "dispPct": 77.8,
-      "weightedDispPct": 78.2,
-      "twinWinProbPct": 84.0,
-      "strongAvgDominance": true,
-      "majAvgAtrMove": 0.776,
-      "minAvgAtrMove": 0.386,
+      "selectedMethod": "LOCK3",
+      "selectedMethodFa": "🔒 قفل سه‌لایه",
+      "all3Agree": true,
+      "consensusMode": 1,
+      "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+      "ruleReason": "R4_LOCK3_PRIMARY",
+      "ruleReasonFa": "حاکمیت قفل سه‌لایه ستونی (LOCK3: تطابق هم‌زمان PRIM + FINAL + ELE-P)",
+      "threeMethodComparison": {
+        "geo": {
+          "method": "GEO",
+          "labelFa": "اول GEO",
+          "selected": false,
+          "n": 4,
+          "ups": 0,
+          "dns": 4,
+          "votes": "0 XAU - 4 USD",
+          "winPct": 100.0,
+          "margin": 4,
+          "minr": 0,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "realPfSteps": 3
+        },
+        "step": {
+          "method": "STEP",
+          "labelFa": "گام‌به‌گام",
+          "selected": false,
+          "n": 6,
+          "ups": 1,
+          "dns": 5,
+          "votes": "1 XAU - 5 USD",
+          "winPct": 83.3,
+          "margin": 4,
+          "minr": 1,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "realPfSteps": 4
+        },
+        "lock3": {
+          "method": "LOCK3",
+          "labelFa": "🔒 قفل سه‌لایه",
+          "selected": true,
+          "n": 5,
+          "ups": 1,
+          "dns": 4,
+          "votes": "1 XAU - 4 USD",
+          "winPct": 80.0,
+          "margin": 3,
+          "minr": 1,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "lockElem": "EARTH",
+          "posLayers": 3,
+          "dec11": true,
+          "dec00": false,
+          "baseTag": "GEO"
+        },
+        "selectedMethod": "LOCK3",
+        "selectedLabelFa": "🔒 قفل سه‌لایه",
+        "all3Agree": true,
+        "consensusMode": 1,
+        "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+        "ruleReason": "R4_LOCK3_PRIMARY",
+        "ruleReasonFa": "حاکمیت قفل سه‌لایه ستونی (LOCK3: تطابق هم‌زمان PRIM + FINAL + ELE-P)"
+      },
+      "twinCount": 5,
+      "upTwins": 1,
+      "downTwins": 4,
+      "margin": 3,
+      "votes": "1 XAU - 4 USD (80.0%)",
+      "dispPct": 80.0,
+      "weightedDispPct": 73.2,
+      "twinWinProbPct": 84.2,
+      "strongAvgDominance": false,
+      "majAvgAtrMove": 0.611,
+      "minAvgAtrMove": 0.63,
       "inGoldenZone": true,
       "hasLock3": true,
       "lock3Cols": [
-        "FIRE"
+        "EARTH"
       ],
       "lock3Peak": true,
       "highPurityLock3Peak": false,
-      "activeLockElem": "FIRE",
+      "activeLockElem": "EARTH",
+      "posLayers": 3,
       "decan11": true,
       "decan00": false,
       "fp1_4": [
-        0.0308,
-        0.0332,
-        -0.0384,
-        0.0033
+        0.0007,
+        -0.0583,
+        -0.0036,
+        -0.0065
       ],
       "ff1_4": [
-        0.0007,
-        0.0232,
-        0.009,
-        0.0604
+        0.0016,
+        -0.0046,
+        0.0003,
+        0.0235
       ],
-      "gaussScore": 0.0242,
+      "gaussScore": -0.0295,
       "tpAtrs": [
-        0.58,
-        0.926,
-        1.396
+        0.25,
+        0.45,
+        0.795
       ]
     },
     "date": "2026-11-26",
@@ -4455,28 +4627,29 @@
     },
     "signature_12col": {
       "price_free": true,
+      "source": "GOOGLE_SHEET",
       "PRIM_FAWE": [
-        3,
-        4,
         0,
-        5
+        5,
+        4,
+        10
       ],
       "FINAL_FAWE": [
-        3,
-        1,
         0,
-        4
+        4,
+        3,
+        7
       ],
       "ELEP_FAWE": [
-        1,
-        1,
         0,
-        2
+        1,
+        1,
+        3
       ],
       "zeroElepCnt": 1,
-      "GEO_FIG": "1001 (Carcer)",
-      "DEC_GEO": "1010",
-      "RULER_GEO": "1010",
+      "GEO_FIG": "0100 (Albus)",
+      "DEC_GEO": "1011",
+      "RULER_GEO": "0101",
       "step3_hits": [
         "F1:ChironS2->F",
         "F2:ChironbQ->E",
@@ -4491,47 +4664,46 @@
       ]
     },
     "twins_and_gaussian": {
-      "twin_count": 9,
-      "votes": "2 XAU - 7 USD (77.8%)",
-      "w_disp_pct": 78.2,
-      "strong_avg_dominance": true,
+      "selected_method": "LOCK3",
+      "all3_agree": true,
+      "consensus_mode": 1,
+      "twin_count": 5,
+      "votes": "1 XAU - 4 USD (80.0%)",
+      "w_disp_pct": 73.2,
+      "strong_avg_dominance": false,
       "twin_dates": [
-        "2014-07-24",
-        "2014-08-14",
-        "2015-02-05",
-        "2017-03-02",
-        "2017-11-30",
-        "2018-07-26",
-        "2020-03-12",
-        "2021-03-25",
-        "2024-10-24"
+        "2020-07-16",
+        "2021-06-03",
+        "2024-02-01",
+        "2025-06-19",
+        "2025-09-11"
       ],
       "in_golden_zone": true,
       "has_lock3": true,
       "lock3_cols": [
-        "FIRE"
+        "EARTH"
       ],
       "lock3_peak": true,
       "high_purity_lock3_peak": false,
       "decan_11": true,
       "decan_00": false,
       "fp1_4": [
-        0.0308,
-        0.0332,
-        -0.0384,
-        0.0033
+        0.0007,
+        -0.0583,
+        -0.0036,
+        -0.0065
       ],
       "ff1_4": [
-        0.0007,
-        0.0232,
-        0.009,
-        0.0604
+        0.0016,
+        -0.0046,
+        0.0003,
+        0.0235
       ],
-      "gauss_score": 0.0242,
+      "gauss_score": -0.0295,
       "tp_atrs": [
-        0.58,
-        0.926,
-        1.396
+        0.25,
+        0.45,
+        0.795
       ]
     },
     "signal": {
@@ -4554,66 +4726,66 @@
       "tier": "C",
       "tier_badge": "👑 Tier C",
       "kelly_multiplier": 1.2,
-      "win_prob_pct": 89.5,
-      "confidence_pct": 89.5,
-      "rr_ratio": 0.53,
+      "win_prob_pct": 89.1,
+      "confidence_pct": 89.1,
+      "rr_ratio": 0.6,
       "veto_flags": [],
       "veto_primary": "",
       "veto_shield_6": [
         {
-          "code": "V1_ZERO_ELEP_TRAP",
-          "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-          "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
+          "code": "V1_TIE_5050_NOISE",
+          "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+          "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V2_TRAP_100",
           "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-          "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+          "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V3_FORMULA_TWIN_DIVERGENCE",
           "titleFa": "واگرایی شدید همزاد و راستر",
-          "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+          "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V4_DECAN_00_CONFLICT",
           "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-          "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+          "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V5_BOXED_SR_COMPRESSION",
           "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-          "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+          "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V6_COUNTER_MACRO_TREND",
           "titleFa": "سپر روند کلان (Macro Regime Shield)",
-          "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
+          "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         }
       ],
       "z_a": 0.4732,
       "z_b": -0.6993,
-      "z_c": -1.6698,
-      "comp_ab": 0.3476,
-      "fusion_score": -1.0398,
+      "z_c": -1.3034,
+      "comp_ab": 0.3241,
+      "fusion_score": -0.8969,
       "pillars_aligned": 2,
       "entry": 3619.8,
-      "sl": 3699.98,
-      "tp1": 3577.52,
-      "tp2": 3515.88,
-      "tp3": 3463.12,
+      "sl": 3704.46,
+      "tp1": 3591.75,
+      "tp2": 3569.31,
+      "tp3": 3530.6,
       "kalshi_bracket": {
         "series": "KXGOLD",
         "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -4622,8 +4794,8 @@
         "bullStrikeAbove": 3600.0,
         "bearStrikeBelow": 3625.0,
         "coreRangeBand": "$3,550 – $3,700",
-        "invalidationLevel": 3699.98,
-        "impliedAboveOpenProbPct": 10.5,
+        "invalidationLevel": 3704.46,
+        "impliedAboveOpenProbPct": 10.9,
         "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
       }
     }
@@ -4640,72 +4812,69 @@
     "dxyPrevClose": 103.67,
     "roomToRunUsd": -39.9,
     "macroRegime": "STRONG_BEAR",
-    "tier": "HOLD",
-    "tierBadge": "🛡️ HOLD/VETO",
+    "tier": "A",
+    "tierBadge": "🟢 Tier A",
     "isC": false,
     "isB": false,
-    "isA": false,
-    "direction": "HOLD / VETO",
-    "biasDirection": "XAU",
+    "isA": true,
+    "direction": "SHORT XAU",
+    "biasDirection": "USD",
     "polarityFlipped": false,
     "polarityFlipCode": "",
     "polarityFlipBadgeFa": "",
     "polarityFlipReasonFa": "",
     "f1ArcanumElement": "AIR",
-    "winProbPct": 65.5,
-    "kellyMultiplier": 0.0,
+    "winProbPct": 84.4,
+    "kellyMultiplier": 0.8,
     "entryPrice": 3616.9,
-    "sl": 3566.41,
-    "tp1": 3667.89,
-    "tp2": 3713.29,
-    "tp3": 3735.74,
-    "rrRatio": 1.01,
-    "vetoReasons": [
-      "V1_ZERO_ELEP_TRAP",
-      "V6_COUNTER_MACRO_TREND"
-    ],
+    "sl": 3701.05,
+    "tp1": 3588.85,
+    "tp2": 3562.14,
+    "tp3": 3538.36,
+    "rrRatio": 0.65,
+    "vetoReasons": [],
     "vetoShield6": [
       {
-        "code": "V1_ZERO_ELEP_TRAP",
-        "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-        "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
-        "triggered": true,
-        "statusFa": "⛔ وتو فعال"
+        "code": "V1_TIE_5050_NOISE",
+        "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+        "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
+        "triggered": false,
+        "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V2_TRAP_100",
         "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-        "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+        "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V3_FORMULA_TWIN_DIVERGENCE",
         "titleFa": "واگرایی شدید همزاد و راستر",
-        "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+        "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V4_DECAN_00_CONFLICT",
         "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V5_BOXED_SR_COMPRESSION",
         "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-        "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+        "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V6_COUNTER_MACRO_TREND",
         "titleFa": "سپر روند کلان (Macro Regime Shield)",
-        "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
-        "triggered": true,
-        "statusFa": "⛔ وتو فعال"
+        "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
+        "triggered": false,
+        "statusFa": "✓ عبور ایمن"
       }
     ],
     "kalshiBracket": {
@@ -4716,35 +4885,94 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3566.41,
-      "impliedAboveOpenProbPct": 65.5,
-      "recommendedContract": "KXGOLD ABOVE $3,600 (YES)"
+      "invalidationLevel": 3701.05,
+      "impliedAboveOpenProbPct": 15.6,
+      "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
+    },
+    "threeMethodComparison": {
+      "geo": {
+        "method": "GEO",
+        "labelFa": "اول GEO",
+        "selected": false,
+        "n": 4,
+        "ups": 1,
+        "dns": 3,
+        "votes": "1 XAU - 3 USD",
+        "winPct": 75.0,
+        "margin": 2,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 3
+      },
+      "step": {
+        "method": "STEP",
+        "labelFa": "گام‌به‌گام",
+        "selected": false,
+        "n": 15,
+        "ups": 3,
+        "dns": 12,
+        "votes": "3 XAU - 12 USD",
+        "winPct": 80.0,
+        "margin": 9,
+        "minr": 3,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 3
+      },
+      "lock3": {
+        "method": "LOCK2",
+        "labelFa": "🔒 قفل دولایه",
+        "selected": true,
+        "n": 4,
+        "ups": 1,
+        "dns": 3,
+        "votes": "1 XAU - 3 USD",
+        "winPct": 75.0,
+        "margin": 2,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "lockElem": "AIR",
+        "posLayers": 2,
+        "dec11": false,
+        "dec00": false,
+        "baseTag": "GEO"
+      },
+      "selectedMethod": "LOCK2",
+      "selectedLabelFa": "🔒 قفل دولایه",
+      "all3Agree": true,
+      "consensusMode": 1,
+      "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+      "ruleReason": "R4_LOCK2_RECOVERY",
+      "ruleReasonFa": "بازیابی هوشمند قفل دولایه (PRIM+FINAL در حضور Zero ELE-P ≥ 2)"
     },
     "signature12Col": {
       "priceFree": true,
+      "source": "GOOGLE_SHEET",
       "PRIM_FAWE": [
-        2,
         6,
         2,
-        2
+        1,
+        10
       ],
       "FINAL_FAWE": [
+        4,
         2,
-        3,
-        2,
-        1
+        1,
+        6
       ],
       "ELEP_FAWE": [
+        2,
         0,
-        3,
-        1,
-        0
+        0,
+        4
       ],
       "zeroElepCnt": 2,
-      "GEO_FIG": "0000 (Populus)",
-      "geoCode": "0000",
-      "geoName": "Populus",
-      "DEC_GEO": "0110",
+      "GEO_FIG": "0010 (Rubeus)",
+      "geoCode": "0010",
+      "geoName": "Rubeus",
+      "DEC_GEO": "1010",
       "RULER_GEO": "0101",
       "step3Hits": [
         "F1:ChironD3->A",
@@ -5651,94 +5879,151 @@
     },
     "matchedTwins": [
       {
-        "date": "2001-12-21",
-        "weekday": "Friday",
-        "direction": "XAU",
-        "move_usd": 2.0,
-        "move_atr": 0.8,
-        "col12_matches": 5,
-        "decan_sim": 1.0,
-        "weight": 0.012
-      },
-      {
-        "date": "2002-05-31",
-        "weekday": "Friday",
-        "direction": "XAU",
-        "move_usd": 1.5,
-        "move_atr": 0.34,
-        "col12_matches": 6,
-        "decan_sim": 1.0,
-        "weight": 0.006
-      },
-      {
-        "date": "2005-02-04",
+        "date": "2016-11-18",
         "weekday": "Friday",
         "direction": "USD",
-        "move_usd": -2.4,
-        "move_atr": 0.52,
+        "move_usd": -8.52,
+        "move_atr": 0.49,
         "col12_matches": 4,
-        "decan_sim": 1.17,
-        "weight": 0.016
+        "decan_sim": 1.09,
+        "weight": 0.086
       },
       {
-        "date": "2015-09-04",
-        "weekday": "Friday",
-        "direction": "USD",
-        "move_usd": -2.8,
-        "move_atr": 0.2,
-        "col12_matches": 5,
-        "decan_sim": 1.17,
-        "weight": 0.035
-      },
-      {
-        "date": "2026-02-27",
+        "date": "2018-06-08",
         "weekday": "Friday",
         "direction": "XAU",
-        "move_usd": 46.0,
-        "move_atr": 0.26,
-        "col12_matches": 5,
-        "decan_sim": 1.17,
-        "weight": 0.272
+        "move_usd": 2.28,
+        "move_atr": 0.24,
+        "col12_matches": 4,
+        "decan_sim": 1.0,
+        "weight": 0.051
+      },
+      {
+        "date": "2022-07-15",
+        "weekday": "Friday",
+        "direction": "USD",
+        "move_usd": -2.57,
+        "move_atr": 0.09,
+        "col12_matches": 6,
+        "decan_sim": 0.74,
+        "weight": 0.03
+      },
+      {
+        "date": "2024-12-13",
+        "weekday": "Friday",
+        "direction": "USD",
+        "move_usd": -32.03,
+        "move_atr": 0.77,
+        "col12_matches": 4,
+        "decan_sim": 0.91,
+        "weight": 0.49
       }
     ],
     "twinConsensus": {
-      "twinCount": 5,
-      "upTwins": 3,
-      "downTwins": 2,
-      "votes": "3 XAU - 2 USD (60.0%)",
-      "dispPct": 60.0,
-      "weightedDispPct": 84.9,
-      "twinWinProbPct": 69.8,
-      "strongAvgDominance": false,
-      "majAvgAtrMove": 0.465,
-      "minAvgAtrMove": 0.356,
-      "inGoldenZone": false,
+      "selectedMethod": "LOCK2",
+      "selectedMethodFa": "🔒 قفل دولایه",
+      "all3Agree": true,
+      "consensusMode": 1,
+      "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+      "ruleReason": "R4_LOCK2_RECOVERY",
+      "ruleReasonFa": "بازیابی هوشمند قفل دولایه (PRIM+FINAL در حضور Zero ELE-P ≥ 2)",
+      "threeMethodComparison": {
+        "geo": {
+          "method": "GEO",
+          "labelFa": "اول GEO",
+          "selected": false,
+          "n": 4,
+          "ups": 1,
+          "dns": 3,
+          "votes": "1 XAU - 3 USD",
+          "winPct": 75.0,
+          "margin": 2,
+          "minr": 1,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "realPfSteps": 3
+        },
+        "step": {
+          "method": "STEP",
+          "labelFa": "گام‌به‌گام",
+          "selected": false,
+          "n": 15,
+          "ups": 3,
+          "dns": 12,
+          "votes": "3 XAU - 12 USD",
+          "winPct": 80.0,
+          "margin": 9,
+          "minr": 3,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "realPfSteps": 3
+        },
+        "lock3": {
+          "method": "LOCK2",
+          "labelFa": "🔒 قفل دولایه",
+          "selected": true,
+          "n": 4,
+          "ups": 1,
+          "dns": 3,
+          "votes": "1 XAU - 3 USD",
+          "winPct": 75.0,
+          "margin": 2,
+          "minr": 1,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "lockElem": "AIR",
+          "posLayers": 2,
+          "dec11": false,
+          "dec00": false,
+          "baseTag": "GEO"
+        },
+        "selectedMethod": "LOCK2",
+        "selectedLabelFa": "🔒 قفل دولایه",
+        "all3Agree": true,
+        "consensusMode": 1,
+        "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+        "ruleReason": "R4_LOCK2_RECOVERY",
+        "ruleReasonFa": "بازیابی هوشمند قفل دولایه (PRIM+FINAL در حضور Zero ELE-P ≥ 2)"
+      },
+      "twinCount": 4,
+      "upTwins": 1,
+      "downTwins": 3,
+      "margin": 2,
+      "votes": "1 XAU - 3 USD (75.0%)",
+      "dispPct": 75.0,
+      "weightedDispPct": 92.2,
+      "twinWinProbPct": 83.7,
+      "strongAvgDominance": true,
+      "majAvgAtrMove": 0.448,
+      "minAvgAtrMove": 0.238,
+      "inGoldenZone": true,
       "hasLock3": true,
       "lock3Cols": [
-        "WATER"
+        "AIR"
       ],
       "lock3Peak": false,
       "highPurityLock3Peak": false,
-      "activeLockElem": "WATER",
+      "activeLockElem": "AIR",
+      "posLayers": 2,
       "decan11": false,
       "decan00": false,
       "fp1_4": [
-        0.0977,
-        0.1125,
-        0.1004,
-        0.0927
+        0.2035,
+        0.121,
+        0.1029,
+        0.0168
       ],
       "ff1_4": [
-        0.115,
-        0.0967,
-        0.0771,
-        0.1155
+        0.1444,
+        0.1229,
+        0.0965,
+        0.0692
       ],
-      "gaussScore": 0.1023,
+      "gaussScore": 0.1265,
       "tpAtrs": [
-        0.699,
-        0.859,
-        1.059
+        0.25,
+        0.488,
+        0.7
       ]
     },
     "date": "2026-11-27",
@@ -6732,27 +7017,28 @@
     },
     "signature_12col": {
       "price_free": true,
+      "source": "GOOGLE_SHEET",
       "PRIM_FAWE": [
-        2,
         6,
         2,
-        2
+        1,
+        10
       ],
       "FINAL_FAWE": [
+        4,
         2,
-        3,
-        2,
-        1
+        1,
+        6
       ],
       "ELEP_FAWE": [
+        2,
         0,
-        3,
-        1,
-        0
+        0,
+        4
       ],
       "zeroElepCnt": 2,
-      "GEO_FIG": "0000 (Populus)",
-      "DEC_GEO": "0110",
+      "GEO_FIG": "0010 (Rubeus)",
+      "DEC_GEO": "1010",
       "RULER_GEO": "0101",
       "step3_hits": [
         "F1:ChironD3->A",
@@ -6768,43 +7054,45 @@
       ]
     },
     "twins_and_gaussian": {
-      "twin_count": 5,
-      "votes": "3 XAU - 2 USD (60.0%)",
-      "w_disp_pct": 84.9,
-      "strong_avg_dominance": false,
+      "selected_method": "LOCK2",
+      "all3_agree": true,
+      "consensus_mode": 1,
+      "twin_count": 4,
+      "votes": "1 XAU - 3 USD (75.0%)",
+      "w_disp_pct": 92.2,
+      "strong_avg_dominance": true,
       "twin_dates": [
-        "2001-12-21",
-        "2002-05-31",
-        "2005-02-04",
-        "2015-09-04",
-        "2026-02-27"
+        "2016-11-18",
+        "2018-06-08",
+        "2022-07-15",
+        "2024-12-13"
       ],
-      "in_golden_zone": false,
+      "in_golden_zone": true,
       "has_lock3": true,
       "lock3_cols": [
-        "WATER"
+        "AIR"
       ],
       "lock3_peak": false,
       "high_purity_lock3_peak": false,
       "decan_11": false,
       "decan_00": false,
       "fp1_4": [
-        0.0977,
-        0.1125,
-        0.1004,
-        0.0927
+        0.2035,
+        0.121,
+        0.1029,
+        0.0168
       ],
       "ff1_4": [
-        0.115,
-        0.0967,
-        0.0771,
-        0.1155
+        0.1444,
+        0.1229,
+        0.0965,
+        0.0692
       ],
-      "gauss_score": 0.1023,
+      "gauss_score": 0.1265,
       "tp_atrs": [
-        0.699,
-        0.859,
-        1.059
+        0.25,
+        0.488,
+        0.7
       ]
     },
     "signal": {
@@ -6812,84 +7100,81 @@
       "weekday": "Friday",
       "split": "LIVE_PREVIEW",
       "macro_trend_regime": "STRONG_BEAR",
-      "pick": "",
-      "raw_dir": "XAU",
-      "orig_raw_dir": "XAU",
+      "pick": "USD",
+      "raw_dir": "USD",
+      "orig_raw_dir": "USD",
       "f1_arcanum_element": "AIR",
       "polarity_flipped": false,
       "polarity_flip_code": "",
       "polarity_flip_badge_fa": "",
       "polarity_flip_reason_fa": "",
-      "action": "HOLD / VETO",
+      "action": "SHORT XAU",
       "is_c": false,
       "is_b": false,
-      "is_a": false,
-      "tier": "",
-      "tier_badge": "🛡️ HOLD/VETO",
-      "kelly_multiplier": 0.0,
-      "win_prob_pct": 65.5,
-      "confidence_pct": 65.5,
-      "rr_ratio": 1.01,
-      "veto_flags": [
-        "V1_ZERO_ELEP_TRAP",
-        "V6_COUNTER_MACRO_TREND"
-      ],
-      "veto_primary": "V1_ZERO_ELEP_TRAP",
+      "is_a": true,
+      "tier": "A",
+      "tier_badge": "🟢 Tier A",
+      "kelly_multiplier": 0.8,
+      "win_prob_pct": 84.4,
+      "confidence_pct": 84.4,
+      "rr_ratio": 0.65,
+      "veto_flags": [],
+      "veto_primary": "",
       "veto_shield_6": [
         {
-          "code": "V1_ZERO_ELEP_TRAP",
-          "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-          "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
-          "triggered": true,
-          "statusFa": "⛔ وتو فعال"
+          "code": "V1_TIE_5050_NOISE",
+          "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+          "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
+          "triggered": false,
+          "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V2_TRAP_100",
           "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-          "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+          "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V3_FORMULA_TWIN_DIVERGENCE",
           "titleFa": "واگرایی شدید همزاد و راستر",
-          "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+          "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V4_DECAN_00_CONFLICT",
           "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-          "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+          "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V5_BOXED_SR_COMPRESSION",
           "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-          "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+          "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V6_COUNTER_MACRO_TREND",
           "titleFa": "سپر روند کلان (Macro Regime Shield)",
-          "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
-          "triggered": true,
-          "statusFa": "⛔ وتو فعال"
+          "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
+          "triggered": false,
+          "statusFa": "✓ عبور ایمن"
         }
       ],
       "z_a": 0.1912,
       "z_b": -0.1707,
-      "z_c": 0.9697,
-      "comp_ab": -0.0622,
-      "fusion_score": 0.473,
+      "z_c": -1.2862,
+      "comp_ab": 0.0549,
+      "fusion_score": -0.752,
       "pillars_aligned": 2,
       "entry": 3616.9,
-      "sl": 3566.41,
-      "tp1": 3667.89,
-      "tp2": 3713.29,
-      "tp3": 3735.74,
+      "sl": 3701.05,
+      "tp1": 3588.85,
+      "tp2": 3562.14,
+      "tp3": 3538.36,
       "kalshi_bracket": {
         "series": "KXGOLD",
         "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -6898,9 +7183,9 @@
         "bullStrikeAbove": 3600.0,
         "bearStrikeBelow": 3625.0,
         "coreRangeBand": "$3,550 – $3,700",
-        "invalidationLevel": 3566.41,
-        "impliedAboveOpenProbPct": 65.5,
-        "recommendedContract": "KXGOLD ABOVE $3,600 (YES)"
+        "invalidationLevel": 3701.05,
+        "impliedAboveOpenProbPct": 15.6,
+        "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
       }
     }
   },
@@ -6928,55 +7213,55 @@
     "polarityFlipBadgeFa": "",
     "polarityFlipReasonFa": "",
     "f1ArcanumElement": "AIR",
-    "winProbPct": 89.5,
+    "winProbPct": 89.1,
     "kellyMultiplier": 1.2,
     "entryPrice": 3619.8,
-    "sl": 3699.98,
-    "tp1": 3577.52,
-    "tp2": 3515.88,
-    "tp3": 3463.12,
-    "rrRatio": 0.53,
+    "sl": 3704.46,
+    "tp1": 3591.75,
+    "tp2": 3569.31,
+    "tp3": 3530.6,
+    "rrRatio": 0.6,
     "vetoReasons": [],
     "vetoShield6": [
       {
-        "code": "V1_ZERO_ELEP_TRAP",
-        "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-        "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
+        "code": "V1_TIE_5050_NOISE",
+        "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+        "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V2_TRAP_100",
         "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-        "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+        "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V3_FORMULA_TWIN_DIVERGENCE",
         "titleFa": "واگرایی شدید همزاد و راستر",
-        "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+        "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V4_DECAN_00_CONFLICT",
         "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V5_BOXED_SR_COMPRESSION",
         "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-        "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+        "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V6_COUNTER_MACRO_TREND",
         "titleFa": "سپر روند کلان (Macro Regime Shield)",
-        "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
+        "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       }
@@ -6989,36 +7274,95 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3699.98,
-      "impliedAboveOpenProbPct": 10.5,
+      "invalidationLevel": 3704.46,
+      "impliedAboveOpenProbPct": 10.9,
       "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
+    },
+    "threeMethodComparison": {
+      "geo": {
+        "method": "GEO",
+        "labelFa": "اول GEO",
+        "selected": false,
+        "n": 4,
+        "ups": 0,
+        "dns": 4,
+        "votes": "0 XAU - 4 USD",
+        "winPct": 100.0,
+        "margin": 4,
+        "minr": 0,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 3
+      },
+      "step": {
+        "method": "STEP",
+        "labelFa": "گام‌به‌گام",
+        "selected": false,
+        "n": 6,
+        "ups": 1,
+        "dns": 5,
+        "votes": "1 XAU - 5 USD",
+        "winPct": 83.3,
+        "margin": 4,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 4
+      },
+      "lock3": {
+        "method": "LOCK3",
+        "labelFa": "🔒 قفل سه‌لایه",
+        "selected": true,
+        "n": 5,
+        "ups": 1,
+        "dns": 4,
+        "votes": "1 XAU - 4 USD",
+        "winPct": 80.0,
+        "margin": 3,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "lockElem": "EARTH",
+        "posLayers": 3,
+        "dec11": true,
+        "dec00": false,
+        "baseTag": "GEO"
+      },
+      "selectedMethod": "LOCK3",
+      "selectedLabelFa": "🔒 قفل سه‌لایه",
+      "all3Agree": true,
+      "consensusMode": 1,
+      "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+      "ruleReason": "R4_LOCK3_PRIMARY",
+      "ruleReasonFa": "حاکمیت قفل سه‌لایه ستونی (LOCK3: تطابق هم‌زمان PRIM + FINAL + ELE-P)"
     },
     "signature12Col": {
       "priceFree": true,
+      "source": "GOOGLE_SHEET",
       "PRIM_FAWE": [
-        3,
-        4,
         0,
-        5
+        5,
+        4,
+        10
       ],
       "FINAL_FAWE": [
-        3,
-        1,
         0,
-        4
+        4,
+        3,
+        7
       ],
       "ELEP_FAWE": [
-        1,
-        1,
         0,
-        2
+        1,
+        1,
+        3
       ],
       "zeroElepCnt": 1,
-      "GEO_FIG": "1001 (Carcer)",
-      "geoCode": "1001",
-      "geoName": "Carcer",
-      "DEC_GEO": "1010",
-      "RULER_GEO": "1010",
+      "GEO_FIG": "0100 (Albus)",
+      "geoCode": "0100",
+      "geoName": "Albus",
+      "DEC_GEO": "1011",
+      "RULER_GEO": "0101",
       "step3Hits": [
         "F1:ChironS2->F",
         "F2:ChironbQ->E",
@@ -7923,134 +8267,161 @@
     },
     "matchedTwins": [
       {
-        "date": "2014-07-24",
+        "date": "2020-07-16",
         "weekday": "Thursday",
         "direction": "USD",
-        "move_usd": -6.9,
-        "move_atr": 0.52,
-        "col12_matches": 6,
-        "decan_sim": 1.35,
-        "weight": 0.089
-      },
-      {
-        "date": "2014-08-14",
-        "weekday": "Thursday",
-        "direction": "XAU",
-        "move_usd": 2.1,
-        "move_atr": 0.17,
-        "col12_matches": 8,
-        "decan_sim": 1.35,
-        "weight": 0.029
-      },
-      {
-        "date": "2015-02-05",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -9.8,
+        "move_usd": -12.92,
         "move_atr": 0.51,
-        "col12_matches": 5,
-        "decan_sim": 1.0,
-        "weight": 0.071
-      },
-      {
-        "date": "2017-03-02",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -15.3,
-        "move_atr": 1.23,
-        "col12_matches": 4,
-        "decan_sim": 1.0,
-        "weight": 0.244
-      },
-      {
-        "date": "2017-11-30",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -9.9,
-        "move_atr": 0.92,
-        "col12_matches": 4,
-        "decan_sim": 1.0,
-        "weight": 0.206
-      },
-      {
-        "date": "2018-07-26",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -2.5,
-        "move_atr": 0.28,
         "col12_matches": 8,
-        "decan_sim": 1.35,
-        "weight": 0.094
+        "decan_sim": 0.91,
+        "weight": 0.147
       },
       {
-        "date": "2020-03-12",
+        "date": "2021-06-03",
         "weekday": "Thursday",
         "direction": "USD",
-        "move_usd": -47.7,
-        "move_atr": 1.67,
-        "col12_matches": 5,
-        "decan_sim": 1.0,
-        "weight": 0.545
+        "move_usd": -37.81,
+        "move_atr": 1.65,
+        "col12_matches": 7,
+        "decan_sim": 1.09,
+        "weight": 0.662
       },
       {
-        "date": "2021-03-25",
-        "weekday": "Thursday",
-        "direction": "USD",
-        "move_usd": -8.1,
-        "move_atr": 0.3,
-        "col12_matches": 5,
-        "decan_sim": 1.0,
-        "weight": 0.116
-      },
-      {
-        "date": "2024-10-24",
+        "date": "2024-02-01",
         "weekday": "Thursday",
         "direction": "XAU",
-        "move_usd": 19.7,
-        "move_atr": 0.6,
-        "col12_matches": 5,
-        "decan_sim": 0.82,
-        "weight": 0.351
+        "move_usd": 15.67,
+        "move_atr": 0.63,
+        "col12_matches": 7,
+        "decan_sim": 1.0,
+        "weight": 0.377
+      },
+      {
+        "date": "2025-06-19",
+        "weekday": "Thursday",
+        "direction": "USD",
+        "move_usd": -1.03,
+        "move_atr": 0.08,
+        "col12_matches": 6,
+        "decan_sim": 0.91,
+        "weight": 0.056
+      },
+      {
+        "date": "2025-09-11",
+        "weekday": "Thursday",
+        "direction": "USD",
+        "move_usd": -10.35,
+        "move_atr": 0.2,
+        "col12_matches": 7,
+        "decan_sim": 1.0,
+        "weight": 0.164
       }
     ],
     "twinConsensus": {
-      "twinCount": 9,
-      "upTwins": 2,
-      "downTwins": 7,
-      "votes": "2 XAU - 7 USD (77.8%)",
-      "dispPct": 77.8,
-      "weightedDispPct": 78.2,
-      "twinWinProbPct": 84.0,
-      "strongAvgDominance": true,
-      "majAvgAtrMove": 0.776,
-      "minAvgAtrMove": 0.386,
+      "selectedMethod": "LOCK3",
+      "selectedMethodFa": "🔒 قفل سه‌لایه",
+      "all3Agree": true,
+      "consensusMode": 1,
+      "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+      "ruleReason": "R4_LOCK3_PRIMARY",
+      "ruleReasonFa": "حاکمیت قفل سه‌لایه ستونی (LOCK3: تطابق هم‌زمان PRIM + FINAL + ELE-P)",
+      "threeMethodComparison": {
+        "geo": {
+          "method": "GEO",
+          "labelFa": "اول GEO",
+          "selected": false,
+          "n": 4,
+          "ups": 0,
+          "dns": 4,
+          "votes": "0 XAU - 4 USD",
+          "winPct": 100.0,
+          "margin": 4,
+          "minr": 0,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "realPfSteps": 3
+        },
+        "step": {
+          "method": "STEP",
+          "labelFa": "گام‌به‌گام",
+          "selected": false,
+          "n": 6,
+          "ups": 1,
+          "dns": 5,
+          "votes": "1 XAU - 5 USD",
+          "winPct": 83.3,
+          "margin": 4,
+          "minr": 1,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "realPfSteps": 4
+        },
+        "lock3": {
+          "method": "LOCK3",
+          "labelFa": "🔒 قفل سه‌لایه",
+          "selected": true,
+          "n": 5,
+          "ups": 1,
+          "dns": 4,
+          "votes": "1 XAU - 4 USD",
+          "winPct": 80.0,
+          "margin": 3,
+          "minr": 1,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "lockElem": "EARTH",
+          "posLayers": 3,
+          "dec11": true,
+          "dec00": false,
+          "baseTag": "GEO"
+        },
+        "selectedMethod": "LOCK3",
+        "selectedLabelFa": "🔒 قفل سه‌لایه",
+        "all3Agree": true,
+        "consensusMode": 1,
+        "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+        "ruleReason": "R4_LOCK3_PRIMARY",
+        "ruleReasonFa": "حاکمیت قفل سه‌لایه ستونی (LOCK3: تطابق هم‌زمان PRIM + FINAL + ELE-P)"
+      },
+      "twinCount": 5,
+      "upTwins": 1,
+      "downTwins": 4,
+      "margin": 3,
+      "votes": "1 XAU - 4 USD (80.0%)",
+      "dispPct": 80.0,
+      "weightedDispPct": 73.2,
+      "twinWinProbPct": 84.2,
+      "strongAvgDominance": false,
+      "majAvgAtrMove": 0.611,
+      "minAvgAtrMove": 0.63,
       "inGoldenZone": true,
       "hasLock3": true,
       "lock3Cols": [
-        "FIRE"
+        "EARTH"
       ],
       "lock3Peak": true,
       "highPurityLock3Peak": false,
-      "activeLockElem": "FIRE",
+      "activeLockElem": "EARTH",
+      "posLayers": 3,
       "decan11": true,
       "decan00": false,
       "fp1_4": [
-        0.0308,
-        0.0332,
-        -0.0384,
-        0.0033
+        0.0007,
+        -0.0583,
+        -0.0036,
+        -0.0065
       ],
       "ff1_4": [
-        0.0007,
-        0.0232,
-        0.009,
-        0.0604
+        0.0016,
+        -0.0046,
+        0.0003,
+        0.0235
       ],
-      "gaussScore": 0.0242,
+      "gaussScore": -0.0295,
       "tpAtrs": [
-        0.58,
-        0.926,
-        1.396
+        0.25,
+        0.45,
+        0.795
       ]
     },
     "date": "2026-11-26",
@@ -9044,28 +9415,29 @@
     },
     "signature_12col": {
       "price_free": true,
+      "source": "GOOGLE_SHEET",
       "PRIM_FAWE": [
-        3,
-        4,
         0,
-        5
+        5,
+        4,
+        10
       ],
       "FINAL_FAWE": [
-        3,
-        1,
         0,
-        4
+        4,
+        3,
+        7
       ],
       "ELEP_FAWE": [
-        1,
-        1,
         0,
-        2
+        1,
+        1,
+        3
       ],
       "zeroElepCnt": 1,
-      "GEO_FIG": "1001 (Carcer)",
-      "DEC_GEO": "1010",
-      "RULER_GEO": "1010",
+      "GEO_FIG": "0100 (Albus)",
+      "DEC_GEO": "1011",
+      "RULER_GEO": "0101",
       "step3_hits": [
         "F1:ChironS2->F",
         "F2:ChironbQ->E",
@@ -9080,47 +9452,46 @@
       ]
     },
     "twins_and_gaussian": {
-      "twin_count": 9,
-      "votes": "2 XAU - 7 USD (77.8%)",
-      "w_disp_pct": 78.2,
-      "strong_avg_dominance": true,
+      "selected_method": "LOCK3",
+      "all3_agree": true,
+      "consensus_mode": 1,
+      "twin_count": 5,
+      "votes": "1 XAU - 4 USD (80.0%)",
+      "w_disp_pct": 73.2,
+      "strong_avg_dominance": false,
       "twin_dates": [
-        "2014-07-24",
-        "2014-08-14",
-        "2015-02-05",
-        "2017-03-02",
-        "2017-11-30",
-        "2018-07-26",
-        "2020-03-12",
-        "2021-03-25",
-        "2024-10-24"
+        "2020-07-16",
+        "2021-06-03",
+        "2024-02-01",
+        "2025-06-19",
+        "2025-09-11"
       ],
       "in_golden_zone": true,
       "has_lock3": true,
       "lock3_cols": [
-        "FIRE"
+        "EARTH"
       ],
       "lock3_peak": true,
       "high_purity_lock3_peak": false,
       "decan_11": true,
       "decan_00": false,
       "fp1_4": [
-        0.0308,
-        0.0332,
-        -0.0384,
-        0.0033
+        0.0007,
+        -0.0583,
+        -0.0036,
+        -0.0065
       ],
       "ff1_4": [
-        0.0007,
-        0.0232,
-        0.009,
-        0.0604
+        0.0016,
+        -0.0046,
+        0.0003,
+        0.0235
       ],
-      "gauss_score": 0.0242,
+      "gauss_score": -0.0295,
       "tp_atrs": [
-        0.58,
-        0.926,
-        1.396
+        0.25,
+        0.45,
+        0.795
       ]
     },
     "signal": {
@@ -9143,66 +9514,66 @@
       "tier": "C",
       "tier_badge": "👑 Tier C",
       "kelly_multiplier": 1.2,
-      "win_prob_pct": 89.5,
-      "confidence_pct": 89.5,
-      "rr_ratio": 0.53,
+      "win_prob_pct": 89.1,
+      "confidence_pct": 89.1,
+      "rr_ratio": 0.6,
       "veto_flags": [],
       "veto_primary": "",
       "veto_shield_6": [
         {
-          "code": "V1_ZERO_ELEP_TRAP",
-          "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-          "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
+          "code": "V1_TIE_5050_NOISE",
+          "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+          "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V2_TRAP_100",
           "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-          "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+          "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V3_FORMULA_TWIN_DIVERGENCE",
           "titleFa": "واگرایی شدید همزاد و راستر",
-          "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+          "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V4_DECAN_00_CONFLICT",
           "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-          "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+          "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V5_BOXED_SR_COMPRESSION",
           "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-          "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+          "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V6_COUNTER_MACRO_TREND",
           "titleFa": "سپر روند کلان (Macro Regime Shield)",
-          "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
+          "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         }
       ],
       "z_a": 0.4732,
       "z_b": -0.6993,
-      "z_c": -1.6698,
-      "comp_ab": 0.3476,
-      "fusion_score": -1.0398,
+      "z_c": -1.3034,
+      "comp_ab": 0.3241,
+      "fusion_score": -0.8969,
       "pillars_aligned": 2,
       "entry": 3619.8,
-      "sl": 3699.98,
-      "tp1": 3577.52,
-      "tp2": 3515.88,
-      "tp3": 3463.12,
+      "sl": 3704.46,
+      "tp1": 3591.75,
+      "tp2": 3569.31,
+      "tp3": 3530.6,
       "kalshi_bracket": {
         "series": "KXGOLD",
         "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -9211,8 +9582,8 @@
         "bullStrikeAbove": 3600.0,
         "bearStrikeBelow": 3625.0,
         "coreRangeBand": "$3,550 – $3,700",
-        "invalidationLevel": 3699.98,
-        "impliedAboveOpenProbPct": 10.5,
+        "invalidationLevel": 3704.46,
+        "impliedAboveOpenProbPct": 10.9,
         "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
       }
     }
@@ -9229,72 +9600,69 @@
     "dxyPrevClose": 103.67,
     "roomToRunUsd": -39.9,
     "macroRegime": "STRONG_BEAR",
-    "tier": "HOLD",
-    "tierBadge": "🛡️ HOLD/VETO",
+    "tier": "A",
+    "tierBadge": "🟢 Tier A",
     "isC": false,
     "isB": false,
-    "isA": false,
-    "direction": "HOLD / VETO",
-    "biasDirection": "XAU",
+    "isA": true,
+    "direction": "SHORT XAU",
+    "biasDirection": "USD",
     "polarityFlipped": false,
     "polarityFlipCode": "",
     "polarityFlipBadgeFa": "",
     "polarityFlipReasonFa": "",
     "f1ArcanumElement": "AIR",
-    "winProbPct": 65.5,
-    "kellyMultiplier": 0.0,
+    "winProbPct": 84.4,
+    "kellyMultiplier": 0.8,
     "entryPrice": 3616.9,
-    "sl": 3566.41,
-    "tp1": 3667.89,
-    "tp2": 3713.29,
-    "tp3": 3735.74,
-    "rrRatio": 1.01,
-    "vetoReasons": [
-      "V1_ZERO_ELEP_TRAP",
-      "V6_COUNTER_MACRO_TREND"
-    ],
+    "sl": 3701.05,
+    "tp1": 3588.85,
+    "tp2": 3562.14,
+    "tp3": 3538.36,
+    "rrRatio": 0.65,
+    "vetoReasons": [],
     "vetoShield6": [
       {
-        "code": "V1_ZERO_ELEP_TRAP",
-        "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-        "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
-        "triggered": true,
-        "statusFa": "⛔ وتو فعال"
+        "code": "V1_TIE_5050_NOISE",
+        "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+        "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
+        "triggered": false,
+        "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V2_TRAP_100",
         "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-        "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+        "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V3_FORMULA_TWIN_DIVERGENCE",
         "titleFa": "واگرایی شدید همزاد و راستر",
-        "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+        "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V4_DECAN_00_CONFLICT",
         "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+        "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V5_BOXED_SR_COMPRESSION",
         "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-        "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+        "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
         "triggered": false,
         "statusFa": "✓ عبور ایمن"
       },
       {
         "code": "V6_COUNTER_MACRO_TREND",
         "titleFa": "سپر روند کلان (Macro Regime Shield)",
-        "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
-        "triggered": true,
-        "statusFa": "⛔ وتو فعال"
+        "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
+        "triggered": false,
+        "statusFa": "✓ عبور ایمن"
       }
     ],
     "kalshiBracket": {
@@ -9305,35 +9673,94 @@
       "bullStrikeAbove": 3600.0,
       "bearStrikeBelow": 3625.0,
       "coreRangeBand": "$3,550 – $3,700",
-      "invalidationLevel": 3566.41,
-      "impliedAboveOpenProbPct": 65.5,
-      "recommendedContract": "KXGOLD ABOVE $3,600 (YES)"
+      "invalidationLevel": 3701.05,
+      "impliedAboveOpenProbPct": 15.6,
+      "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
+    },
+    "threeMethodComparison": {
+      "geo": {
+        "method": "GEO",
+        "labelFa": "اول GEO",
+        "selected": false,
+        "n": 4,
+        "ups": 1,
+        "dns": 3,
+        "votes": "1 XAU - 3 USD",
+        "winPct": 75.0,
+        "margin": 2,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 3
+      },
+      "step": {
+        "method": "STEP",
+        "labelFa": "گام‌به‌گام",
+        "selected": false,
+        "n": 15,
+        "ups": 3,
+        "dns": 12,
+        "votes": "3 XAU - 12 USD",
+        "winPct": 80.0,
+        "margin": 9,
+        "minr": 3,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "realPfSteps": 3
+      },
+      "lock3": {
+        "method": "LOCK2",
+        "labelFa": "🔒 قفل دولایه",
+        "selected": true,
+        "n": 4,
+        "ups": 1,
+        "dns": 3,
+        "votes": "1 XAU - 3 USD",
+        "winPct": 75.0,
+        "margin": 2,
+        "minr": 1,
+        "dir": "USD",
+        "dirFa": "نزولی (SHORT)",
+        "lockElem": "AIR",
+        "posLayers": 2,
+        "dec11": false,
+        "dec00": false,
+        "baseTag": "GEO"
+      },
+      "selectedMethod": "LOCK2",
+      "selectedLabelFa": "🔒 قفل دولایه",
+      "all3Agree": true,
+      "consensusMode": 1,
+      "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+      "ruleReason": "R4_LOCK2_RECOVERY",
+      "ruleReasonFa": "بازیابی هوشمند قفل دولایه (PRIM+FINAL در حضور Zero ELE-P ≥ 2)"
     },
     "signature12Col": {
       "priceFree": true,
+      "source": "GOOGLE_SHEET",
       "PRIM_FAWE": [
-        2,
         6,
         2,
-        2
+        1,
+        10
       ],
       "FINAL_FAWE": [
+        4,
         2,
-        3,
-        2,
-        1
+        1,
+        6
       ],
       "ELEP_FAWE": [
+        2,
         0,
-        3,
-        1,
-        0
+        0,
+        4
       ],
       "zeroElepCnt": 2,
-      "GEO_FIG": "0000 (Populus)",
-      "geoCode": "0000",
-      "geoName": "Populus",
-      "DEC_GEO": "0110",
+      "GEO_FIG": "0010 (Rubeus)",
+      "geoCode": "0010",
+      "geoName": "Rubeus",
+      "DEC_GEO": "1010",
       "RULER_GEO": "0101",
       "step3Hits": [
         "F1:ChironD3->A",
@@ -10240,94 +10667,151 @@
     },
     "matchedTwins": [
       {
-        "date": "2001-12-21",
-        "weekday": "Friday",
-        "direction": "XAU",
-        "move_usd": 2.0,
-        "move_atr": 0.8,
-        "col12_matches": 5,
-        "decan_sim": 1.0,
-        "weight": 0.012
-      },
-      {
-        "date": "2002-05-31",
-        "weekday": "Friday",
-        "direction": "XAU",
-        "move_usd": 1.5,
-        "move_atr": 0.34,
-        "col12_matches": 6,
-        "decan_sim": 1.0,
-        "weight": 0.006
-      },
-      {
-        "date": "2005-02-04",
+        "date": "2016-11-18",
         "weekday": "Friday",
         "direction": "USD",
-        "move_usd": -2.4,
-        "move_atr": 0.52,
+        "move_usd": -8.52,
+        "move_atr": 0.49,
         "col12_matches": 4,
-        "decan_sim": 1.17,
-        "weight": 0.016
+        "decan_sim": 1.09,
+        "weight": 0.086
       },
       {
-        "date": "2015-09-04",
-        "weekday": "Friday",
-        "direction": "USD",
-        "move_usd": -2.8,
-        "move_atr": 0.2,
-        "col12_matches": 5,
-        "decan_sim": 1.17,
-        "weight": 0.035
-      },
-      {
-        "date": "2026-02-27",
+        "date": "2018-06-08",
         "weekday": "Friday",
         "direction": "XAU",
-        "move_usd": 46.0,
-        "move_atr": 0.26,
-        "col12_matches": 5,
-        "decan_sim": 1.17,
-        "weight": 0.272
+        "move_usd": 2.28,
+        "move_atr": 0.24,
+        "col12_matches": 4,
+        "decan_sim": 1.0,
+        "weight": 0.051
+      },
+      {
+        "date": "2022-07-15",
+        "weekday": "Friday",
+        "direction": "USD",
+        "move_usd": -2.57,
+        "move_atr": 0.09,
+        "col12_matches": 6,
+        "decan_sim": 0.74,
+        "weight": 0.03
+      },
+      {
+        "date": "2024-12-13",
+        "weekday": "Friday",
+        "direction": "USD",
+        "move_usd": -32.03,
+        "move_atr": 0.77,
+        "col12_matches": 4,
+        "decan_sim": 0.91,
+        "weight": 0.49
       }
     ],
     "twinConsensus": {
-      "twinCount": 5,
-      "upTwins": 3,
-      "downTwins": 2,
-      "votes": "3 XAU - 2 USD (60.0%)",
-      "dispPct": 60.0,
-      "weightedDispPct": 84.9,
-      "twinWinProbPct": 69.8,
-      "strongAvgDominance": false,
-      "majAvgAtrMove": 0.465,
-      "minAvgAtrMove": 0.356,
-      "inGoldenZone": false,
+      "selectedMethod": "LOCK2",
+      "selectedMethodFa": "🔒 قفل دولایه",
+      "all3Agree": true,
+      "consensusMode": 1,
+      "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+      "ruleReason": "R4_LOCK2_RECOVERY",
+      "ruleReasonFa": "بازیابی هوشمند قفل دولایه (PRIM+FINAL در حضور Zero ELE-P ≥ 2)",
+      "threeMethodComparison": {
+        "geo": {
+          "method": "GEO",
+          "labelFa": "اول GEO",
+          "selected": false,
+          "n": 4,
+          "ups": 1,
+          "dns": 3,
+          "votes": "1 XAU - 3 USD",
+          "winPct": 75.0,
+          "margin": 2,
+          "minr": 1,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "realPfSteps": 3
+        },
+        "step": {
+          "method": "STEP",
+          "labelFa": "گام‌به‌گام",
+          "selected": false,
+          "n": 15,
+          "ups": 3,
+          "dns": 12,
+          "votes": "3 XAU - 12 USD",
+          "winPct": 80.0,
+          "margin": 9,
+          "minr": 3,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "realPfSteps": 3
+        },
+        "lock3": {
+          "method": "LOCK2",
+          "labelFa": "🔒 قفل دولایه",
+          "selected": true,
+          "n": 4,
+          "ups": 1,
+          "dns": 3,
+          "votes": "1 XAU - 3 USD",
+          "winPct": 75.0,
+          "margin": 2,
+          "minr": 1,
+          "dir": "USD",
+          "dirFa": "نزولی (SHORT)",
+          "lockElem": "AIR",
+          "posLayers": 2,
+          "dec11": false,
+          "dec00": false,
+          "baseTag": "GEO"
+        },
+        "selectedMethod": "LOCK2",
+        "selectedLabelFa": "🔒 قفل دولایه",
+        "all3Agree": true,
+        "consensusMode": 1,
+        "consensusBadgeFa": "حالت ۱: اجماع کامل هر ۳ روش ✨",
+        "ruleReason": "R4_LOCK2_RECOVERY",
+        "ruleReasonFa": "بازیابی هوشمند قفل دولایه (PRIM+FINAL در حضور Zero ELE-P ≥ 2)"
+      },
+      "twinCount": 4,
+      "upTwins": 1,
+      "downTwins": 3,
+      "margin": 2,
+      "votes": "1 XAU - 3 USD (75.0%)",
+      "dispPct": 75.0,
+      "weightedDispPct": 92.2,
+      "twinWinProbPct": 83.7,
+      "strongAvgDominance": true,
+      "majAvgAtrMove": 0.448,
+      "minAvgAtrMove": 0.238,
+      "inGoldenZone": true,
       "hasLock3": true,
       "lock3Cols": [
-        "WATER"
+        "AIR"
       ],
       "lock3Peak": false,
       "highPurityLock3Peak": false,
-      "activeLockElem": "WATER",
+      "activeLockElem": "AIR",
+      "posLayers": 2,
       "decan11": false,
       "decan00": false,
       "fp1_4": [
-        0.0977,
-        0.1125,
-        0.1004,
-        0.0927
+        0.2035,
+        0.121,
+        0.1029,
+        0.0168
       ],
       "ff1_4": [
-        0.115,
-        0.0967,
-        0.0771,
-        0.1155
+        0.1444,
+        0.1229,
+        0.0965,
+        0.0692
       ],
-      "gaussScore": 0.1023,
+      "gaussScore": 0.1265,
       "tpAtrs": [
-        0.699,
-        0.859,
-        1.059
+        0.25,
+        0.488,
+        0.7
       ]
     },
     "date": "2026-11-27",
@@ -11321,27 +11805,28 @@
     },
     "signature_12col": {
       "price_free": true,
+      "source": "GOOGLE_SHEET",
       "PRIM_FAWE": [
-        2,
         6,
         2,
-        2
+        1,
+        10
       ],
       "FINAL_FAWE": [
+        4,
         2,
-        3,
-        2,
-        1
+        1,
+        6
       ],
       "ELEP_FAWE": [
+        2,
         0,
-        3,
-        1,
-        0
+        0,
+        4
       ],
       "zeroElepCnt": 2,
-      "GEO_FIG": "0000 (Populus)",
-      "DEC_GEO": "0110",
+      "GEO_FIG": "0010 (Rubeus)",
+      "DEC_GEO": "1010",
       "RULER_GEO": "0101",
       "step3_hits": [
         "F1:ChironD3->A",
@@ -11357,43 +11842,45 @@
       ]
     },
     "twins_and_gaussian": {
-      "twin_count": 5,
-      "votes": "3 XAU - 2 USD (60.0%)",
-      "w_disp_pct": 84.9,
-      "strong_avg_dominance": false,
+      "selected_method": "LOCK2",
+      "all3_agree": true,
+      "consensus_mode": 1,
+      "twin_count": 4,
+      "votes": "1 XAU - 3 USD (75.0%)",
+      "w_disp_pct": 92.2,
+      "strong_avg_dominance": true,
       "twin_dates": [
-        "2001-12-21",
-        "2002-05-31",
-        "2005-02-04",
-        "2015-09-04",
-        "2026-02-27"
+        "2016-11-18",
+        "2018-06-08",
+        "2022-07-15",
+        "2024-12-13"
       ],
-      "in_golden_zone": false,
+      "in_golden_zone": true,
       "has_lock3": true,
       "lock3_cols": [
-        "WATER"
+        "AIR"
       ],
       "lock3_peak": false,
       "high_purity_lock3_peak": false,
       "decan_11": false,
       "decan_00": false,
       "fp1_4": [
-        0.0977,
-        0.1125,
-        0.1004,
-        0.0927
+        0.2035,
+        0.121,
+        0.1029,
+        0.0168
       ],
       "ff1_4": [
-        0.115,
-        0.0967,
-        0.0771,
-        0.1155
+        0.1444,
+        0.1229,
+        0.0965,
+        0.0692
       ],
-      "gauss_score": 0.1023,
+      "gauss_score": 0.1265,
       "tp_atrs": [
-        0.699,
-        0.859,
-        1.059
+        0.25,
+        0.488,
+        0.7
       ]
     },
     "signal": {
@@ -11401,84 +11888,81 @@
       "weekday": "Friday",
       "split": "LIVE_PREVIEW",
       "macro_trend_regime": "STRONG_BEAR",
-      "pick": "",
-      "raw_dir": "XAU",
-      "orig_raw_dir": "XAU",
+      "pick": "USD",
+      "raw_dir": "USD",
+      "orig_raw_dir": "USD",
       "f1_arcanum_element": "AIR",
       "polarity_flipped": false,
       "polarity_flip_code": "",
       "polarity_flip_badge_fa": "",
       "polarity_flip_reason_fa": "",
-      "action": "HOLD / VETO",
+      "action": "SHORT XAU",
       "is_c": false,
       "is_b": false,
-      "is_a": false,
-      "tier": "",
-      "tier_badge": "🛡️ HOLD/VETO",
-      "kelly_multiplier": 0.0,
-      "win_prob_pct": 65.5,
-      "confidence_pct": 65.5,
-      "rr_ratio": 1.01,
-      "veto_flags": [
-        "V1_ZERO_ELEP_TRAP",
-        "V6_COUNTER_MACRO_TREND"
-      ],
-      "veto_primary": "V1_ZERO_ELEP_TRAP",
+      "is_a": true,
+      "tier": "A",
+      "tier_badge": "🟢 Tier A",
+      "kelly_multiplier": 0.8,
+      "win_prob_pct": 84.4,
+      "confidence_pct": 84.4,
+      "rr_ratio": 0.65,
+      "veto_flags": [],
+      "veto_primary": "",
       "veto_shield_6": [
         {
-          "code": "V1_ZERO_ELEP_TRAP",
-          "titleFa": "تله صفر عنصری (Zero ELE-P ≥ 2)",
-          "descFa": "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند",
-          "triggered": true,
-          "statusFa": "⛔ وتو فعال"
+          "code": "V1_TIE_5050_NOISE",
+          "titleFa": "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)",
+          "descFa": "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد",
+          "triggered": false,
+          "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V2_TRAP_100",
           "titleFa": "تله اشباع ۱۰۰٪ (Trap 100%)",
-          "descFa": "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها",
+          "descFa": "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V3_FORMULA_TWIN_DIVERGENCE",
           "titleFa": "واگرایی شدید همزاد و راستر",
-          "descFa": "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها",
+          "descFa": "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V4_DECAN_00_CONFLICT",
           "titleFa": "تضاد دکان و حاکم (Decan 0/0)",
-          "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است",
+          "descFa": "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V5_BOXED_SR_COMPRESSION",
           "titleFa": "فشردگی در سقف/کف (Boxed S/R)",
-          "descFa": "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد",
+          "descFa": "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف",
           "triggered": false,
           "statusFa": "✓ عبور ایمن"
         },
         {
           "code": "V6_COUNTER_MACRO_TREND",
           "titleFa": "سپر روند کلان (Macro Regime Shield)",
-          "descFa": "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+",
-          "triggered": true,
-          "statusFa": "⛔ وتو فعال"
+          "descFa": "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)",
+          "triggered": false,
+          "statusFa": "✓ عبور ایمن"
         }
       ],
       "z_a": 0.1912,
       "z_b": -0.1707,
-      "z_c": 0.9697,
-      "comp_ab": -0.0622,
-      "fusion_score": 0.473,
+      "z_c": -1.2862,
+      "comp_ab": 0.0549,
+      "fusion_score": -0.752,
       "pillars_aligned": 2,
       "entry": 3616.9,
-      "sl": 3566.41,
-      "tp1": 3667.89,
-      "tp2": 3713.29,
-      "tp3": 3735.74,
+      "sl": 3701.05,
+      "tp1": 3588.85,
+      "tp2": 3562.14,
+      "tp3": 3538.36,
       "kalshi_bracket": {
         "series": "KXGOLD",
         "settlementAnchor": "COMEX/LBMA 17:00 ET",
@@ -11487,9 +11971,9 @@
         "bullStrikeAbove": 3600.0,
         "bearStrikeBelow": 3625.0,
         "coreRangeBand": "$3,550 – $3,700",
-        "invalidationLevel": 3566.41,
-        "impliedAboveOpenProbPct": 65.5,
-        "recommendedContract": "KXGOLD ABOVE $3,600 (YES)"
+        "invalidationLevel": 3701.05,
+        "impliedAboveOpenProbPct": 15.6,
+        "recommendedContract": "KXGOLD BELOW $3,625 (YES)"
       }
     }
   }

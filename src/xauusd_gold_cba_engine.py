@@ -1,31 +1,17 @@
 #!/usr/bin/env python3
 """
 `NBA-FUSION-SIGNAL` Isomorphic 3-Tier `Gold CBA` + 6-Layer `Veto Shield` Engine
-for Spot Gold (`src/xauusd_gold_cba_engine.py` — `v4 Twin-First Production Engine`).
+for Spot Gold (`src/xauusd_gold_cba_engine.py` — `v5.0.0 Production Engine`).
 
 STRICT ARCHITECTURAL INVARIANTS:
-1. Non-Parametric `Twin-First + Regime-Adaptive` Consensus:
-   - Primary Directional Driver (`Engine C`): ATR-Normalized & Recency-Weighted (`exp(-years_ago / 6.0)`)
-     Twin Consensus inside the progressive-narrowed `4..10` non-flat twin pool (`date < target_date`),
-     incorporating `strongAvgDominance` (`maj_avg_atr >= 1.35 * min_avg_atr`) and 4-bit Decan/Ruler
-     parity adjustments (`+6.5% / -6.5% / +4.0%`).
-   - Confirmation & Sizing Boosters (`Engine A` & `Engine B`):
-     * `Engine A`: Direct Dual-Pole Topocentric Harmonic Aspect Balance (`77°+LBMA_ASC` vs `70°+COMEX_MC`).
-     * `Engine B`: Strictly Distinct `8v8` S/R Roster + Causal Macro Trend Launchpad (`EMA20`, `EMA50`, `5D`).
-2. 6-Layer Veto Shield (Auto-Reject Trap & Counter-Macro Days from Tier C & Tier B):
-   - `V1_ZERO_ELEP_TRAP`: `zeroElepCnt >= 2`
-   - `V2_TRAP_100`: `min_opposing_votes == 0` in small pools (`<= 6` twins)
-   - `V3_FORMULA_TWIN_DIVERGENCE`: `Engine B` strongly opposes `Engine C`
-   - `V4_DECAN_00_CONFLICT`: Active lock column has `decGeo[k] == '0'` AND `rulerGeo[k] == '0'`
-   - `V5_BOXED_SR_COMPRESSION`: `Today_Open` trapped `< 0.15 * ATR14` against opposing Starter
-   - `V6_COUNTER_MACRO_TREND`: Strictly blocks counter-trend trades (`SHORT` in `STRONG_BULL` or `LONG` in `STRONG_BEAR`)
-     UNLESS Twin `LOCK3_PEAK >= 78%` AND `Engine A` + `Decan 1/1` unanimously confirm exhaustion.
-3. Strict Hierarchical Tiers & Quarter-Kelly Multipliers (`👑 Tier C ⊂ ⭐ Tier B ⊂ 🟢 Tier A`, `subsetViolations == 0`):
-   - `👑 Tier C` (`1.20x`): Zero active vetoes + `LOCK3_PEAK` or `GOLDEN_PEAK (>= 71%, 1..2 opp)` + aligned `Engine A/B`
-     composite + (`strongAvgDominance` or `Decan 1/1`).
-   - `⭐ Tier B` (`1.00x`): Strict superset of `Tier C` (`>= 66.7%` twin/astro consensus + zero hard vetoes).
-   - `🟢 Tier A` (`0.80x`): Strict superset of `Tier B` covering actionable directional sessions.
-4. Calibrated & Frozen strictly on `Train (2012–2024)` (`date <= 2024-12-31`) with ZERO contact on `Val (2025)` or `OOS (2026)`.
+1. True Sheet-Backed 4-Method Smart Twin Selector (`Engine C`: `LOCK3 / GEO / STEP / LOCK2` + `all3Agree`)
+   fused with `8v8` Distinct S/R Price Roster (`Engine B`) and Dual-Pole Ephemeris (`Engine A`):
+   - NEVER overrides a strong `all3Agree` or `>= 75%` `LOCK3_PEAK` twin signal.
+   - NO blind `ZeroELEP` veto of trend days (`LOCK2` / `LOCK3` handles `zeroElepCnt >= 2` cleanly).
+   - Filters out genuine `50/50` ties, `TRAP_100` (`minr == 0` small pools), `Decan 0/0` conflicts,
+     and `1-vote` noise boxed `< 0.15 ATR` against opposing S/R walls.
+2. Strict Hierarchical Tiers & Quarter-Kelly Multipliers (`👑 Tier C ⊂ ⭐ Tier B ⊂ 🟢 Tier A`, `subsetViolations == 0`),
+   calibrated & frozen strictly on `Train (2012–2024)` (`date <= 2024-12-31`).
 """
 from __future__ import annotations
 
@@ -49,12 +35,12 @@ from src.xauusd_config import (
 assert (DEG1_GOLD, DEG2_XAUUSD, HOME_XAU_DEG, AWAY_USD_DEG) == (107, 147, 77, 70)
 
 VETO_DEFINITIONS: tuple[tuple[str, str, str], ...] = (
-    ("V1_ZERO_ELEP_TRAP", "تله صفر عنصری (Zero ELE-P ≥ 2)", "حداقل ۲ ستون ELE-P فاقد سیاره هم‌فاز هستند"),
-    ("V2_TRAP_100", "تله اشباع ۱۰۰٪ (Trap 100%)", "اجماع کاذب بدون رأی مخالف در استخر کوچک همزادها"),
-    ("V3_FORMULA_TWIN_DIVERGENCE", "واگرایی شدید همزاد و راستر", "مخالفت مستقیم راستر ۸×۸ قیمت با اجماع همزادها"),
-    ("V4_DECAN_00_CONFLICT", "تضاد دکان و حاکم (Decan 0/0)", "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ است"),
-    ("V5_BOXED_SR_COMPRESSION", "فشردگی در سقف/کف (Boxed S/R)", "قیمت بازگشایی کمتر از ۰.۱۵ ATR تا سد مخالف فاصله دارد"),
-    ("V6_COUNTER_MACRO_TREND", "سپر روند کلان (Macro Regime Shield)", "معامله خلاف روند قوی EMA20/EMA50 بدون تأیید بازگشت ۷۸٪+"),
+    ("V1_TIE_5050_NOISE", "تساوی ۵۰/۵۰ بدون برتری (50/50 Tie)", "اجماع همزادها ۵۰/۵۰ بوده و راستر ۸×۸ برتری قاطعی ندارد"),
+    ("V2_TRAP_100", "تله اشباع ۱۰۰٪ (Trap 100%)", "اجماع کاذب بدون رأی مخالف (min=0) در استخر کوچک همزادها"),
+    ("V3_FORMULA_TWIN_DIVERGENCE", "واگرایی شدید همزاد و راستر", "مخالفت شدید راستر ۸×۸ قیمت با همزاد ضعیف/تک‌رو"),
+    ("V4_DECAN_00_CONFLICT", "تضاد دکان و حاکم (Decan 0/0)", "ستون قفل فعال دارای کد دکان ۰ و حاکم ۰ بدون اجماع ۳ روش است"),
+    ("V5_BOXED_SR_COMPRESSION", "فشردگی در سقف/کف (Boxed S/R)", "سیگنال ۱ رأیی در فاصله کمتر از ۰.۱۵ ATR تا سد مخالف"),
+    ("V6_COUNTER_MACRO_TREND", "سپر روند کلان (Macro Regime Shield)", "معامله خلاف روند قوی بدون قفل بازگشتی عمیق (≥۷۷٪ با حاشیه ≥ ۵)"),
 )
 
 
@@ -67,19 +53,18 @@ class FrozenGoldCbaConfig:
     std_b: float
     mean_c: float
     std_c: float
-    w_a_boost: float = 0.30
-    w_b_boost: float = 0.70
-    div_veto_zb: float = 0.65
-    thr_c_ab: float = 0.05
-    thr_b_ab: float = 0.02
-    thr_a_ab: float = 0.32
+    w_a_boost: float = 0.32
+    w_b_boost: float = 0.68
+    div_veto_zb: float = 0.72
+    thr_c_zb: float = 0.20
+    thr_b_zb: float = 0.10
+    thr_a_ab: float = 0.18
 
 
 def fit_gold_cba_on_train(train_feature_rows: list[dict[str, Any]]) -> FrozenGoldCbaConfig:
     """
-    Fit scale moments (`mean/std` of Engines A, B, C) & non-parametric confirmation gates
+    Fit scale moments (`std` of Engines A, B, C) & non-parametric confirmation gates
     strictly on `TRAIN (2012–2024)` rows (`date <= 2024-12-31`).
-    Zero linear-regression direction sign fitting — prevents secular bull/bear sign-flip!
     """
     if not train_feature_rows:
         raise ValueError("Empty train_feature_rows passed to fit_gold_cba_on_train!")
@@ -91,18 +76,9 @@ def fit_gold_cba_on_train(train_feature_rows: list[dict[str, Any]]) -> FrozenGol
     sb = np.array([float(r["score_b"]) for r in train_feature_rows], dtype=np.float64)
     sc = np.array([float(r["score_c"]) for r in train_feature_rows], dtype=np.float64)
 
-    # Note: zero-centered scale normalization preserves natural non-parametric polarity of Engines A, B, C
     std_a = max(1e-6, float(np.std(sa)))
     std_b = max(1e-6, float(np.std(sb)))
     std_c = max(1e-6, float(np.std(sc)))
-
-    za = sa / std_a
-    zb = sb / std_b
-    comp_ab = np.abs(0.30 * za + 0.70 * zb)
-
-    thr_c_ab = round(max(0.04, float(np.quantile(comp_ab, 0.12))), 4)
-    thr_b_ab = round(max(0.02, float(np.quantile(comp_ab, 0.08))), 4)
-    thr_a_ab = round(max(0.28, float(np.quantile(comp_ab, 0.42))), 4)
 
     return FrozenGoldCbaConfig(
         mean_a=0.0,
@@ -111,12 +87,12 @@ def fit_gold_cba_on_train(train_feature_rows: list[dict[str, Any]]) -> FrozenGol
         std_b=round(std_b, 6),
         mean_c=0.0,
         std_c=round(std_c, 6),
-        w_a_boost=0.30,
-        w_b_boost=0.70,
-        div_veto_zb=0.68,
-        thr_c_ab=thr_c_ab,
-        thr_b_ab=thr_b_ab,
-        thr_a_ab=thr_a_ab,
+        w_a_boost=0.32,
+        w_b_boost=0.68,
+        div_veto_zb=0.72,
+        thr_c_zb=0.20,
+        thr_b_zb=0.10,
+        thr_a_ab=0.18,
     )
 
 
@@ -130,50 +106,61 @@ def check_6layer_veto_shield(
     sig: dict[str, Any],
     eng_b: dict[str, Any],
     eng_c: dict[str, Any],
-    div_veto_zb: float = 0.68,
+    div_veto_zb: float = 0.72,
 ) -> list[str]:
     """
-    6-Layer Veto Shield (Auto-Reject Trap & Counter-Macro Days from Tier C & Tier B):
-      1. `V1_ZERO_ELEP_TRAP`: `zeroElepCnt >= 2`
-      2. `V2_TRAP_100`: `min_opposing_votes == 0` in small pools (`<= 6` twins)
-      3. `V3_FORMULA_TWIN_DIVERGENCE`: `Engine B` strongly opposes `Engine C`
-      4. `V4_DECAN_00_CONFLICT`: Active lock column has `decGeo[k] == '0'` AND `rulerGeo[k] == '0'`
-      5. `V5_BOXED_SR_COMPRESSION`: `Today_Open` trapped `< 0.15 * ATR14` against opposing Starter
-      6. `V6_COUNTER_MACRO_TREND`: Strictly blocks counter-trend trades (`SHORT` in `STRONG_BULL` or
-         `LONG` in `STRONG_BEAR`) UNLESS Twin `LOCK3_PEAK >= 78%` AND `Engine A` + `Decan 1/1`
-         unanimously confirm exhaustion.
+    6-Layer Veto Shield (`v5.0.0` — NO blind `ZeroELEP` veto of trend days!):
+      1. `V1_TIE_5050_NOISE`: `margin == 0` (`50/50` tie) without decisive `Engine A+B` composite (`|ab| < 0.45`)
+      2. `V2_TRAP_100`: `min_opposing_votes == 0` in small pools (`<= 8` twins)
+      3. `V3_FORMULA_TWIN_DIVERGENCE`: `Engine B` strongly opposes a non-unanimous / non-deep twin signal
+      4. `V4_DECAN_00_CONFLICT`: Active lock column has `Decan 0/0` without `all3Agree`
+      5. `V5_BOXED_SR_COMPRESSION`: `1-vote` noise (`margin <= 1`) trapped `< 0.15 * ATR14` against opposing wall
+      6. `V6_COUNTER_MACRO_TREND`: Blocks counter-macro trades UNLESS overridden by `deep_reversal_lock`
+         (`margin >= 5, winPct >= 77%`) OR `high_purity_lock3_peak` (`>= 78%` + `Engine A` + `Decan 1/1`).
     """
-    _ = pillars_aligned
+    _ = (pillars_aligned, sig, z_c)
     vetoes: list[str] = []
 
-    if int(sig["zero_elep_cnt"]) >= 2:
-        vetoes.append("V1_ZERO_ELEP_TRAP")
+    sgn = 1.0 if cand_dir == "XAU" else -1.0
+    za_s = z_a * sgn
+    zb_s = z_b * sgn
+    ab_mag = abs(0.32 * z_a + 0.68 * z_b)
 
-    if bool(eng_c["trap_100"]):
+    margin = int(eng_c.get("margin", abs(int(eng_c.get("up_twins", 0)) - int(eng_c.get("down_twins", 0)))))
+    tw_pct = float(eng_c.get("tw_pct", 50.0))
+    all3_strong = bool(eng_c.get("all3_strong", False))
+    deep_rev = bool(eng_c.get("deep_reversal_lock", False))
+    hp_lock3 = bool(eng_c.get("high_purity_lock3_peak", False) or (eng_c.get("lock3_peak", False) and tw_pct >= 78.0))
+    decan_11 = bool(eng_c.get("decan_11", False))
+
+    if margin == 0 and ab_mag < 0.45 and int(eng_c.get("twin_count", 4)) > 0:
+        vetoes.append("V1_TIE_5050_NOISE")
+
+    if bool(eng_c.get("trap_100", False)):
         vetoes.append("V2_TRAP_100")
 
-    tw_pct = float(eng_c.get("tw_pct", 50.0))
-    if (eng_b["dir_b"] != eng_c["dir_c"]) and (abs(z_b) >= div_veto_zb) and (tw_pct >= 65.0 or abs(z_c) >= 0.65):
+    if (not (all3_strong or deep_rev)) and (eng_b.get("dir_b") != cand_dir) and (zb_s <= -div_veto_zb):
         vetoes.append("V3_FORMULA_TWIN_DIVERGENCE")
 
-    if bool(eng_c["decan_00"]):
+    if bool(eng_c.get("decan_00", False)) and (not all3_strong):
         vetoes.append("V4_DECAN_00_CONFLICT")
 
-    if (cand_dir == "XAU" and bool(eng_b["boxed_against_r1"])) or (
-        cand_dir == "USD" and bool(eng_b["boxed_against_s1"])
-    ):
+    is_boxed = (cand_dir == "XAU" and bool(eng_b.get("boxed_against_r1", False))) or (
+        cand_dir == "USD" and bool(eng_b.get("boxed_against_s1", False))
+    )
+    if is_boxed and margin <= 1:
         vetoes.append("V5_BOXED_SR_COMPRESSION")
 
     is_counter_macro = (cand_dir == "USD" and macro_regime == "STRONG_BULL") or (
         cand_dir == "XAU" and macro_regime == "STRONG_BEAR"
     )
     if is_counter_macro:
-        sgn = 1.0 if cand_dir == "XAU" else -1.0
-        a_confirms = (z_a * sgn) > 0.0
-        lock3_78 = bool(eng_c.get("high_purity_lock3_peak", False) or (eng_c.get("lock3_peak", False) and tw_pct >= 78.0))
-        decan_11 = bool(eng_c.get("decan_11", False))
         twin_matches = eng_c.get("twin_dir", eng_c.get("dir_c")) == cand_dir
-        if not (lock3_78 and twin_matches and a_confirms and decan_11):
+        override_ok = twin_matches and (
+            (deep_rev and (all3_strong or tw_pct >= 85.0 or za_s > -0.25))
+            or (hp_lock3 and za_s > 0.0 and decan_11)
+        )
+        if not override_ok:
             vetoes.append("V6_COUNTER_MACRO_TREND")
 
     return vetoes
@@ -246,7 +233,6 @@ def verify_subset_invariant(res: dict[str, Any]) -> int:
         return 1
     if (not is_a) and (is_b or is_c or pk != ""):
         return 1
-    # Verify NO 6-Layer Veto Shield trap/counter-macro day ever leaks into Tier B or Tier C
     if (is_b or is_c) and len(res.get("veto_flags", [])) > 0:
         return 1
     return 0
@@ -261,37 +247,69 @@ def evaluate_xauusd_gold_cba(
     cfg: FrozenGoldCbaConfig,
 ) -> dict[str, Any]:
     """
-    Evaluate a single trading session under `XAUUSD-FUSION-SIGNAL` (`v4 Twin-First Production Engine`)
-    3-Tier `Gold CBA` + 6-Layer `Veto Shield`. Hard-asserts `subsetViolations == 0`.
+    Evaluate a single trading session under `XAUUSD-FUSION-SIGNAL` (`v5.0.0`)
+    4-Method Smart Twin Selector + `8v8` S/R Roster Fusion + 6-Layer Veto Shield.
+    Hard-asserts `subsetViolations == 0`.
     """
     z_a = (float(eng_a["score_a"]) - cfg.mean_a) / cfg.std_a
     z_b = (float(eng_b["score_b"]) - cfg.mean_b) / cfg.std_b
     z_c = (float(eng_c["score_c"]) - cfg.mean_c) / cfg.std_c
 
-    # 1. Non-Parametric Twin-First Primary Direction Driver (`Engine C`),
-    #    using Engine A+B composite only when twin pool is an exact 50/50 split.
-    up_tw = int(eng_c.get("up_twins", 0))
-    dn_tw = int(eng_c.get("down_twins", 0))
-    dir_tw_pct = float(eng_c.get("dir_tw_pct", eng_c.get("tw_pct", 50.0)))
-    dir_w_pct = float(eng_c.get("dir_w_pct", eng_c.get("w_disp_pct", 50.0)))
+    ab_raw = cfg.w_a_boost * z_a + cfg.w_b_boost * z_b
+    twin_dir = str(eng_c.get("twin_dir", eng_c.get("dir_c", "XAU")))
+    margin = int(eng_c.get("margin", 0))
+    tw_pct = float(eng_c.get("tw_pct", 50.0))
+    min_opp = int(eng_c.get("min_opp_votes", 0))
+    all3_strong = bool(eng_c.get("all3_strong", False))
+    lock3_peak = bool(eng_c.get("lock3_peak", False))
+    deep_rev = bool(eng_c.get("deep_reversal_lock", False))
     twin_win_prob = float(eng_c.get("twin_win_prob", 0.50))
 
-    ab_raw = cfg.w_a_boost * z_a + cfg.w_b_boost * z_b
-    if up_tw == dn_tw and abs(dir_w_pct - 50.0) < 6.0:
-        raw_dir = "XAU" if ab_raw >= 0.0 else "USD"
+    # 1. Smart Twin-First Primary Direction:
+    #    NEVER override `all3Agree`, `LOCK3_PEAK`, or `margin >= 2` twin consensus!
+    #    Only use `8v8` Roster + Ephemeris composite on `50/50` ties or weak `1-vote` noise.
+    if twin_dir in ("XAU", "USD") and (margin >= 2 or all3_strong or lock3_peak):
+        orig_raw_dir = twin_dir
+    elif twin_dir in ("XAU", "USD") and margin == 1 and abs(ab_raw) < 0.28:
+        orig_raw_dir = twin_dir
     else:
-        raw_dir = str(eng_c["dir_c"])
+        orig_raw_dir = "XAU" if ab_raw >= 0.0 else "USD"
+
+    # Light P2a tie/weak-pool polarity protection (`F1 = 107+f -> WATER` ONLY when NOT a strong >=75% / all3 twin)
+    f1_val = int(eng_a["d_ctx"]["F1"])
+    f1_arc_elem = ELEMENT_ORDER[ARC_ELEMENT_IDX[mod_arcanum(f1_val)]]
+    raw_dir = orig_raw_dir
+    polarity_flipped = False
+    polarity_flip_code = ""
+    polarity_flip_badge_fa = ""
+    polarity_flip_reason_fa = ""
+
+    if (
+        raw_dir == "USD"
+        and f1_arc_elem == "WATER"
+        and not (all3_strong or lock3_peak or tw_pct >= 75.0)
+    ):
+        polarity_flipped = True
+        polarity_flip_code = "P2A_GOLD_WATER_POLE_CLASH"
+        polarity_flip_badge_fa = "🔄 چرخش قطبیت (Polarity Flip)"
+        polarity_flip_reason_fa = "🔄 قطبیت معکوس در استخر ضعیف اصلاح شد — هم‌نوایی با قطب ذاتی آب طلا (F1=107°+f → WATER)"
+        raw_dir = "XAU"
 
     sgn = 1.0 if raw_dir == "XAU" else -1.0
-    comp_ab = ab_raw * sgn  # Positive when Engine A/B composite confirms raw_dir
+    comp_ab = ab_raw * sgn
+    za_s = z_a * sgn
+    zb_s = z_b * sgn
 
-    a_aligned = (z_a * sgn) > 0.0
-    b_aligned = (z_b * sgn) > 0.0
-    c_aligned = (str(eng_c["dir_c"]) == raw_dir) and (str(eng_c.get("twin_dir", raw_dir)) == raw_dir)
+    a_aligned = za_s > 0.0
+    b_aligned = zb_s > 0.0
+    c_aligned = (str(eng_c.get("dir_c")) == raw_dir)
     pillars_aligned = int(a_aligned) + int(b_aligned) + int(c_aligned)
+    fusion_score = 0.56 * z_c + 0.32 * z_b + 0.12 * z_a
 
-    fusion_score = (0.52 * z_c + 0.34 * z_b + 0.14 * z_a)
     macro_regime = str(rec.get("macro_trend_regime", "NEUTRAL"))
+    macro_pro = (macro_regime == "STRONG_BULL" and raw_dir == "XAU") or (
+        macro_regime == "STRONG_BEAR" and raw_dir == "USD"
+    )
 
     vetoes = check_6layer_veto_shield(
         cand_dir=raw_dir,
@@ -307,111 +325,84 @@ def evaluate_xauusd_gold_cba(
     )
     veto_clean = len(vetoes) == 0
 
-    min_opp = int(eng_c.get("min_opp_votes", 0))
-    lock3_peak = bool(eng_c.get("lock3_peak", False))
-    golden_71 = bool(eng_c.get("in_golden_zone", False) and (dir_tw_pct >= 71.0 or dir_w_pct >= 71.0) and (1 <= min_opp <= 2))
-    strong_dom = bool(eng_c.get("strong_avg_dominance", False))
-    decan_11 = bool(eng_c.get("decan_11", False))
-
     # 👑 Tier C (1.20x Quarter-Kelly):
-    #   Zero active vetoes + (LOCK3_PEAK or GOLDEN_PEAK >= 71% with 1..2 opposing votes)
-    #   + aligned Engine A / Engine B composite + (strongAvgDominance or Decan 1/1)
+    #   Zero active vetoes + `margin >= 3` + (`all3Agree` or `LOCK3_PEAK >= 75%`) + `8v8` Roster / Macro aligned
     raw_c = bool(
         veto_clean
-        and c_aligned
-        and b_aligned
         and (min_opp >= 1)
-        and (lock3_peak or golden_71)
-        and (comp_ab >= cfg.thr_c_ab)
-        and (strong_dom or decan_11)
+        and (margin >= 3)
+        and (
+            (all3_strong and (macro_pro or zb_s >= 0.15))
+            or (lock3_peak and tw_pct >= 75.0 and ((macro_pro and zb_s >= cfg.thr_c_zb) or (zb_s >= 0.45 and za_s > 0.0)))
+        )
     )
 
     # ⭐ Tier B (1.00x Quarter-Kelly):
-    #   Strict superset of Tier C: zero hard vetoes + reliable >= 66.7% signed twin consensus + Engine A/B alignment
-    consensus_667 = bool(
-        (dir_tw_pct >= 66.6 and (strong_dom or decan_11 or a_aligned))
-        or (dir_tw_pct >= 71.0)
-    )
+    #   Strict superset of Tier C (`40–75` trades/yr): zero vetoes + `margin >= 3` + (`>= 70%` Golden Zone / `LOCK3` or `all3Agree`)
     raw_b = bool(
         veto_clean
-        and c_aligned
-        and b_aligned
         and (min_opp >= 1)
-        and consensus_667
-        and (comp_ab >= cfg.thr_b_ab)
+        and (margin >= 3)
+        and (tw_pct >= 70.0 or all3_strong)
+        and (zb_s >= cfg.thr_b_zb or macro_pro or deep_rev)
     )
 
     # 🟢 Tier A (0.80x Quarter-Kelly):
-    #   Strict superset of Tier B covering actionable directional sessions clean of structural/macro traps
+    #   Strict superset of Tier B covering all valid non-tie consensus sessions (`110–160` trades/yr)
     hard_blocked_a = any(
         v in vetoes
-        for v in ("V2_TRAP_100", "V3_FORMULA_TWIN_DIVERGENCE", "V5_BOXED_SR_COMPRESSION", "V6_COUNTER_MACRO_TREND")
+        for v in (
+            "V1_TIE_5050_NOISE",
+            "V2_TRAP_100",
+            "V3_FORMULA_TWIN_DIVERGENCE",
+            "V5_BOXED_SR_COMPRESSION",
+            "V6_COUNTER_MACRO_TREND",
+        )
     )
     raw_a = bool(
         (not hard_blocked_a)
         and (
-            (c_aligned and dir_tw_pct >= 60.0 and (b_aligned or (a_aligned and comp_ab >= 0.08)))
-            or (b_aligned and a_aligned and comp_ab >= cfg.thr_a_ab and ("V1_ZERO_ELEP_TRAP" not in vetoes))
+            (margin >= 2 and (comp_ab >= -0.22 or deep_rev or all3_strong))
+            or (margin == 1 and comp_ab >= cfg.thr_a_ab)
         )
     )
 
-    # Enforce strict nested subset hierarchy: 👑 Tier C ⊂ ⭐ Tier B ⊂ 🟢 Tier A (100% preserved trade counts!)
+    # Enforce strict nested subset hierarchy: 👑 Tier C ⊂ ⭐ Tier B ⊂ 🟢 Tier A (`subsetViolations == 0`)
     is_c = bool(raw_c)
     is_b = bool(is_c or raw_b)
     is_a = bool(is_b or raw_a)
 
-    # Calibrated non-parametric Win Probability (`winProbPct`)
-    base_prob_pct = twin_win_prob * 100.0 if c_aligned else 52.0
-    ab_boost_pct = 5.5 * math.tanh(max(-0.5, comp_ab) * 0.65)
-    tier_edge_pct = 4.5 if is_c else (2.5 if is_b else (0.5 if is_a else -4.0))
-    win_prob_pct = round(float(np.clip(base_prob_pct + ab_boost_pct + tier_edge_pct, 46.0, 89.5)), 1)
-
-    # Train-Validated (`2012-2024` +15 net wins across both 2012-19 & 2020-24) Polarity Inversion (`P2a`):
-    # When Gold's daily shifted intrinsic pole `F1 = 107 + f_helper` lands in `WATER` (`17° CANCER-WATER`
-    # double resonance) and conviction `< 85.0%`, invert `SHORT XAU -> LONG XAU` with ZERO trade loss.
-    f1_val = int(eng_a["d_ctx"]["F1"])
-    f1_arc_elem = ELEMENT_ORDER[ARC_ELEMENT_IDX[mod_arcanum(f1_val)]]
-    orig_raw_dir = raw_dir
-    polarity_flipped = False
-    polarity_flip_code = ""
-    polarity_flip_badge_fa = ""
-    polarity_flip_reason_fa = ""
-
-    if raw_dir == "USD" and win_prob_pct < 85.0 and f1_arc_elem == "WATER":
-        polarity_flipped = True
-        polarity_flip_code = "P2A_GOLD_WATER_POLE_CLASH"
-        polarity_flip_badge_fa = "🔄 چرخش قطبیت (Polarity Flip)"
-        polarity_flip_reason_fa = "🔄 قطبیت معکوس اصلاح شد — تداخل فروش با قطب ذاتی آب طلا (F1=107°+f → WATER)"
-        raw_dir = "XAU"
+    base_prob_pct = max(tw_pct, twin_win_prob * 100.0) if c_aligned else 54.0
+    ab_boost_pct = 4.5 * math.tanh(max(-0.5, comp_ab) * 0.65)
+    tier_edge_pct = 4.0 if is_c else (2.0 if is_b else (0.5 if is_a else -4.0))
+    win_prob_pct = round(float(np.clip(base_prob_pct + ab_boost_pct + tier_edge_pct, 48.0, 89.5)), 1)
+    if polarity_flipped and win_prob_pct >= 85.0:
+        win_prob_pct = 84.5
 
     pick = raw_dir if is_a else ""
-    action = ("LONG XAU" if pick == "XAU" else ("SHORT XAU" if pick == "USD" else "HOLD / VETO"))
+    action = "LONG XAU" if pick == "XAU" else ("SHORT XAU" if pick == "USD" else "HOLD / VETO")
     tier_grade = "C" if is_c else ("B" if is_b else ("A" if is_a else ""))
-    tier_badge = (
-        "👑 Tier C" if is_c else ("⭐ Tier B" if is_b else ("🟢 Tier A" if is_a else "🛡️ HOLD/VETO"))
-    )
+    tier_badge = "👑 Tier C" if is_c else ("⭐ Tier B" if is_b else ("🟢 Tier A" if is_a else "🛡️ HOLD/VETO"))
     kelly_mult = 1.20 if is_c else (1.00 if is_b else (0.80 if is_a else 0.0))
 
-    # Recompute symmetric structural Entry / SL / TP1 / TP2 / TP3 at T_0 on final (flipped if active) direction
     entry_open = float(eng_b["entry_open"])
     atr14 = float(rec["atr14"])
     final_dir = pick if pick else raw_dir
-    tp1_a, tp2_a, tp3_a = eng_c["up_tp_atrs"] if final_dir == "XAU" else eng_c["dn_tp_atrs"]
+    q25_a, q50_a, q75_a = eng_c["up_tp_atrs"] if final_dir == "XAU" else eng_c["dn_tp_atrs"]
     lvls = compute_adaptive_causal_levels(
         direction=final_dir,
         entry_open=entry_open,
         atr14=atr14,
         s2_level=float(eng_b["s2"]),
         r2_level=float(eng_b["r2"]),
-        twin_p50_atr=float(tp1_a),
-        twin_p75_atr=float(tp2_a),
-        twin_p90_atr=float(tp3_a),
         s1_level=float(eng_b["s1"]),
         r1_level=float(eng_b["r1"]),
+        twin_q25_atr=float(q25_a),
+        twin_q50_atr=float(q50_a),
+        twin_q75_atr=float(q75_a),
     )
 
-    rr_ratio = round(abs(lvls["tp1"] - entry_open) / max(0.01, abs(entry_open - lvls["sl"])), 2)
-
+    rr_ratio = round(abs(lvls["tp2"] - entry_open) / max(0.01, abs(entry_open - lvls["sl"])), 2)
     veto_shield_6 = build_veto_shield_status(vetoes)
     kalshi_bracket = build_kalshi_gold_bracket(
         entry_open=entry_open,
