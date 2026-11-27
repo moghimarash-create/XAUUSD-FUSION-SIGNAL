@@ -1,7 +1,7 @@
 {
   "service": "XAUUSD-FUSION-SIGNAL",
-  "version": "4.0.0",
-  "versionTag": "v4",
+  "version": "4.1.0",
+  "versionTag": "v4.1",
   "lastUpdatedUtc": "2026-11-27T06:10:04Z",
   "locked_anchor": "ANCHOR_DUAL_POLE_1800",
   "locked_anchor_label": "Dual-Pole Fusion (18:00 NY D-1 Candle Birth: XAU @ LBMA London vs USD @ COMEX NY)",

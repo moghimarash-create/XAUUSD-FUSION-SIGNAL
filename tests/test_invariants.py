@@ -163,7 +163,7 @@ class TestXauusdFusionInvariants(unittest.TestCase):
 
         with open(summary_path, encoding="utf-8") as f:
             summary = json.load(f)
-        self.assertEqual(summary["version"], "4.0.0")
+        self.assertEqual(summary["version"], "4.1.0")
         self.assertEqual(summary["subset_violations"], 0)
         self.assertEqual(summary["lookahead_leakage"], 0)
         self.assertEqual(summary["distinct_8v8_rate_pct"], 100.0)
@@ -190,7 +190,7 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         with open(shard_path, encoding="utf-8") as f:
             shard = json.load(f)
         self.assertEqual(shard["service"], "XAUUSD-FUSION-SIGNAL")
-        self.assertEqual(shard["version"], "4.0.0")
+        self.assertEqual(shard["version"], "4.1.0")
         self.assertIn("sessionDate", shard)
         self.assertIn("kellyMultiplier", shard)
         self.assertIn("kalshiBracket", shard)
@@ -198,6 +198,52 @@ class TestXauusdFusionInvariants(unittest.TestCase):
         self.assertEqual(len({int(round(p["level"])) for p in shard["awayUsdRoster"]}), 8)
         for tw in shard["matchedTwins"]:
             self.assertLess(tw["date"], shard["sessionDate"])
+
+    def test_by_date_past_weekend_and_future(self) -> None:
+        import pickle
+        from src.run_pipeline import build_signal_by_date_payload
+        from src.xauusd_gold_cba_engine import FrozenGoldCbaConfig
+
+        with open(os.path.join(DATA_DIR, "xauusd_backtest_summary.json"), encoding="utf-8") as f:
+            frozen_cfg = FrozenGoldCbaConfig(**json.load(f)["frozen_cfg"])
+        with open(os.path.join(DATA_DIR, "xauusd_history_shard.json"), encoding="utf-8") as f:
+            hist_map = {r["date"]: r for r in json.load(f)}
+        with open(os.path.join(DATA_DIR, "xauusd_twin_archive.pkl"), "rb") as pf:
+            pk = pickle.load(pf)
+
+        records_by_date = pk["records_by_date"]
+        sorted_dates = sorted(records_by_date.keys())
+
+        # 1. Past OOS date (2026-11-10)
+        past = build_signal_by_date_payload(
+            "2026-11-10", records_by_date, sorted_dates, hist_map, pk["archive_full"], pk["latest_rec"], frozen_cfg
+        )
+        self.assertEqual(past["sessionDate"], "2026-11-10")
+        self.assertTrue(past["isHistorical"])
+        self.assertFalse(past["isFuture"])
+        self.assertIsNotNone(past["actualMove"])
+        self.assertIsNotNone(past["execPnl"])
+        for tw in past["matchedTwins"]:
+            self.assertLess(tw["date"], "2026-11-10")
+
+        # 2. Weekend auto-snap (Saturday 2026-11-14 -> Friday 2026-11-13)
+        wknd = build_signal_by_date_payload(
+            "2026-11-14", records_by_date, sorted_dates, hist_map, pk["archive_full"], pk["latest_rec"], frozen_cfg
+        )
+        self.assertTrue(wknd["snapped"])
+        self.assertEqual(wknd["sessionDate"], "2026-11-13")
+
+        # 3. Future date (Wednesday 2026-12-02)
+        fut = build_signal_by_date_payload(
+            "2026-12-02", records_by_date, sorted_dates, hist_map, pk["archive_full"], pk["latest_rec"], frozen_cfg
+        )
+        self.assertEqual(fut["sessionDate"], "2026-12-02")
+        self.assertTrue(fut["isFuture"])
+        self.assertEqual(fut["modeBadgeFa"], "پیشبینی تاریخ آتی")
+        self.assertEqual(len(fut["homeXauRoster"]), 8)
+        self.assertEqual(len(fut["awayUsdRoster"]), 8)
+        for tw in fut["matchedTwins"]:
+            self.assertLessEqual(tw["date"], pk["latest_rec"]["date"])
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>رادار هوشمند طلا — XAUUSD-FUSION-SIGNAL v4.0</title>
+  <title>رادار هوشمند طلا — XAUUSD-FUSION-SIGNAL v4.1</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -20,7 +20,7 @@
         <div class="brand-copy">
           <div class="brand-title-row">
             <h1 class="brand-title">رادار هوشمند طلا — <span class="ltr-num">XAUUSD-FUSION-SIGNAL</span></h1>
-            <span class="version-pill ltr-num" id="hdr-version">v4.0.0</span>
+            <span class="version-pill ltr-num" id="hdr-version">v4.1.0</span>
           </div>
           <p class="brand-subtitle">
             موتور همزاد-محور نجومی، عنصری و رمل بدون نشت آینده • لنگر دوقطبی
@@ -36,6 +36,25 @@
           </button>
           <button type="button" class="session-tab" id="tab-next-session" data-mode="next" role="tab" aria-selected="false">
             پیش‌نمایش سشن بعدی
+          </button>
+        </div>
+
+        <div class="date-machine-bar" role="group" aria-label="ماشین زمان انتخاب تاریخ سشن">
+          <button type="button" class="btn-date-nav" id="btn-prev-session" title="بارگذاری سشن معاملاتی قبلی">
+            ◀ سشن قبل
+          </button>
+          <label class="date-picker-label" for="session-date-picker">
+            <span>📅 انتخاب تاریخ:</span>
+            <input
+              type="date"
+              id="session-date-picker"
+              class="date-picker-input ltr-num"
+              min="2012-01-03"
+              max="2035-12-31"
+            />
+          </label>
+          <button type="button" class="btn-date-nav" id="btn-next-session" title="بارگذاری سشن معاملاتی بعدی">
+            سشن بعد ▶
           </button>
         </div>
 
@@ -99,8 +118,8 @@
     <section class="panel hero-panel" id="section-hero-signal">
       <div class="panel-header">
         <div>
-          <span class="section-eyebrow">بخش اول • فرماندهی سشن معاملاتی</span>
-          <h2 class="panel-title">نوار وضعیت و کارت فرماندهی سشن زنده</h2>
+          <span class="section-eyebrow">بخش اول • فرماندهی سشن معاملاتی (گذشته، حال و آینده)</span>
+          <h2 class="panel-title">نوار وضعیت و کارت فرماندهی سشن انتخابی</h2>
         </div>
         <div class="hero-session-meta">
           <span class="meta-badge" id="hero-session-mode-badge">سشن فعال</span>
@@ -108,6 +127,9 @@
           <span class="meta-utc ltr-num" id="hero-candle-utc">--</span>
         </div>
       </div>
+
+      <!-- Historical Actual Outcome OR Future Projection Banner -->
+      <div class="hero-outcome-banner hidden" id="hero-outcome-banner"></div>
 
       <div class="hero-grid">
         <!-- Main Verdict Column -->
@@ -454,7 +476,7 @@
     <section class="panel" id="section-ledger">
       <div class="panel-header">
         <div>
-          <span class="section-eyebrow">بخش چهارم • شفافیت کامل حسابرسی معاملات</span>
+          <span class="section-eyebrow">بخش چهارم • شفافیت کامل حسابرسی معاملات (کلیک روی هر ردیف = بارگذاری کامل رادار آن روز)</span>
           <h2 class="panel-title">آرشیو نتایج و جدول اثبات عملکرد — <span class="ltr-num">2025 Val &amp; 2026 Blind OOS</span></h2>
         </div>
         <span class="ledger-count-badge" id="ledger-count-badge">-- رکورد</span>
@@ -556,7 +578,7 @@
 
   <footer class="site-footer">
     <div class="container footer-inner">
-      <span>سامانه <strong class="ltr-num">XAUUSD-FUSION-SIGNAL v4.0.0</strong> • معماری هم‌ریخت با <span class="ltr-num">NBA-FUSION-SIGNAL</span></span>
+      <span>سامانه <strong class="ltr-num">XAUUSD-FUSION-SIGNAL v4.1.0</strong> • معماری هم‌ریخت با <span class="ltr-num">NBA-FUSION-SIGNAL</span></span>
       <span class="ltr-num">DEG1=107° CANCER • DEG2=147° LEO • HOME=77° GEMINI • AWAY=70° GEMINI</span>
     </div>
   </footer>

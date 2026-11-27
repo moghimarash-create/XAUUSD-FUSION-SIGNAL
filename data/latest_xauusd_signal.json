@@ -1,9 +1,9 @@
 {
   "service": "XAUUSD-FUSION-SIGNAL",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "anchor": "ANCHOR_DUAL_POLE_1800",
   "feedSource": "CACHED_VERIFIED_FEED",
-  "lastUpdatedUtc": "2026-11-27T06:10:04Z",
+  "lastUpdatedUtc": "2026-11-27T07:22:11Z",
   "sessionDate": "2026-11-26",
   "weekday": "Thursday",
   "candleOpenUtc": "2026-11-25T23:00:00Z",

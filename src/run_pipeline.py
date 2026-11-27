@@ -591,16 +591,16 @@ def build_live_signal_card(
     }
 
 
-def _build_next_session_preview_rec(latest_rec: dict[str, Any], live_spot: float | None = None) -> dict[str, Any]:
+def _build_projected_session_rec(
+    latest_rec: dict[str, Any],
+    target_dt: datetime.date,
+    live_spot: float | None = None,
+    split_tag: str = "FUTURE_PROJECTION",
+) -> dict[str, Any]:
     """
-    Construct a causal rollover preview record for the next trading weekday after `latest_rec["date"]`
+    Construct a causal projected session record for any future trading weekday `target_dt > latest_rec["date"]`
     using `latest_rec`'s completed OHLC as `Prev_Day` and `live_spot` (or `Prev_Close`) as indicative open.
     """
-    y, m, d = map(int, latest_rec["date"].split("-"))
-    nxt_dt = datetime.date(y, m, d) + datetime.timedelta(days=1)
-    while nxt_dt.weekday() >= 5:
-        nxt_dt += datetime.timedelta(days=1)
-
     roll_open = round(float(live_spot if live_spot is not None else latest_rec["_target_close"]), 2)
     prev_h = max(float(latest_rec["today_open"]), float(latest_rec["_target_high"]), roll_open)
     prev_l = min(float(latest_rec["today_open"]), float(latest_rec["_target_low"]), roll_open)
@@ -622,10 +622,10 @@ def _build_next_session_preview_rec(latest_rec: dict[str, Any], live_spot: float
     nxt = dict(latest_rec)
     nxt.update(
         {
-            "date": nxt_dt.strftime("%Y-%m-%d"),
-            "weekday": nxt_dt.strftime("%A"),
-            "weekday_up": nxt_dt.strftime("%A").upper(),
-            "split": "LIVE_PREVIEW",
+            "date": target_dt.strftime("%Y-%m-%d"),
+            "weekday": target_dt.strftime("%A"),
+            "weekday_up": target_dt.strftime("%A").upper(),
+            "split": split_tag,
             "today_open": roll_open,
             "prev_open": float(latest_rec["today_open"]),
             "pdh": prev_h,
@@ -654,6 +654,15 @@ def _build_next_session_preview_rec(latest_rec: dict[str, Any], live_spot: float
     return nxt
 
 
+def _build_next_session_preview_rec(latest_rec: dict[str, Any], live_spot: float | None = None) -> dict[str, Any]:
+    """Construct causal rollover preview record for the immediate next trading weekday after `latest_rec["date"]`."""
+    y, m, d = map(int, latest_rec["date"].split("-"))
+    nxt_dt = datetime.date(y, m, d) + datetime.timedelta(days=1)
+    while nxt_dt.weekday() >= 5:
+        nxt_dt += datetime.timedelta(days=1)
+    return _build_projected_session_rec(latest_rec, nxt_dt, live_spot=live_spot, split_tag="LIVE_PREVIEW")
+
+
 def _fetch_live_yahoo_spot_quote() -> tuple[float | None, str]:
     """Attempt quick non-blocking live quote fetch for Gold (`GC=F`) with safe fallback."""
     url = "https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1h&range=2d"
@@ -673,7 +682,7 @@ def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, 
     """
     Fast O(1) live refresh used by `POST /api/refresh`:
     loads pre-indexed `xauusd_twin_archive.pkl` (rebuilding once if absent) + optional live spot quote,
-    and recomputes `shards/latest_xauusd_signals.json` in `< 0.2s` while keeping `RSS < 90 MiB`.
+    and recomputes `shards/latest_xauusd_signals.json` in `< 0.2s` while keeping `RSS < 95 MiB`.
     """
     live_spot = None
     feed_source = "CACHED_VERIFIED_FEED"
@@ -688,6 +697,7 @@ def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, 
     latest_rec: dict[str, Any] | None = None
     archive_before_latest: HistoricalTwinArchive | None = None
     archive: HistoricalTwinArchive | None = None
+    records_by_date: dict[str, dict[str, Any]] | None = None
 
     if os.path.exists(pkl_path):
         try:
@@ -696,12 +706,14 @@ def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, 
             latest_rec = cached_bundle["latest_rec"]
             archive_before_latest = cached_bundle["archive_before_latest"]
             archive = cached_bundle["archive_full"]
+            records_by_date = cached_bundle.get("records_by_date")
         except Exception:
             latest_rec = None
 
-    if latest_rec is None or archive_before_latest is None or archive is None:
+    if latest_rec is None or archive_before_latest is None or archive is None or records_by_date is None:
         df_daily, _df_1h, df_sess = fetch_and_cache_market_data(force_refresh=False)
         records = build_zero_leakage_daily_records(df_daily, df_sess)
+        records_by_date = {r["date"]: r for r in records if r["date"] >= "2012-01-01"}
         archive = HistoricalTwinArchive()
         n_recs = len(records)
         for idx_r, rec in enumerate(records):
@@ -737,6 +749,7 @@ def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, 
                     "latest_rec": latest_rec,
                     "archive_before_latest": archive_before_latest,
                     "archive_full": archive,
+                    "records_by_date": records_by_date,
                 },
                 pf,
             )
@@ -757,7 +770,7 @@ def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, 
     now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     return {
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.0.0",
+        "version": "4.1.0",
         "anchor": LOCKED_ANCHOR_KEY,
         "feedSource": feed_source,
         "lastUpdatedUtc": now_iso,
@@ -766,6 +779,191 @@ def refresh_live_signal_shard_only(try_network_fetch: bool = True) -> dict[str, 
         "nextSessionPreview": next_card,
         "latest_session": live_card,
         "next_session_preview": next_card,
+    }
+
+
+def build_signal_by_date_payload(
+    requested_date_str: str,
+    records_by_date: dict[str, dict[str, Any]],
+    sorted_dates: list[str],
+    history_by_date: dict[str, dict[str, Any]],
+    archive_full: HistoricalTwinArchive,
+    latest_rec: dict[str, Any],
+    frozen_cfg: FrozenGoldCbaConfig,
+    live_spot: float | None = None,
+) -> dict[str, Any]:
+    """
+    Evaluate ANY requested date (`Past 2012..latest_bar`, `Present latest_bar`, or `Future > latest_bar`):
+      - Auto-snaps weekend / holiday dates to the nearest valid Monday-Friday trading session.
+      - Historical dates (`<= latest_bar`): returns full zero-leakage radar payload (`matchedTwins < sessionDate`)
+        PLUS actual candle & execution outcomes (`actualMove`, `hitOutcome`, `execPnl`).
+      - Future dates (`> latest_bar`): computes exact topocentric `18:00 America/New_York (D-1)` Dual-Pole
+        celestial chart, `12-Col Twin Signature`, `matchedTwins (< latest_bar)`, and celestial Veto checks,
+        anchoring projected `8v8` S/R levels to the latest known spot/OHLC/ATR14 (`پیشبینی تاریخ آتی`).
+    """
+    raw_s = requested_date_str.strip()
+    try:
+        req_dt = datetime.date.fromisoformat(raw_s)
+    except ValueError as exc:
+        raise ValueError(f"Invalid date format '{raw_s}'. Expected YYYY-MM-DD.") from exc
+
+    if req_dt < datetime.date(2012, 1, 1) or req_dt > datetime.date(2035, 12, 31):
+        raise ValueError(f"Date '{raw_s}' out of supported range (2012-01-01 .. 2035-12-31).")
+
+    req_iso = req_dt.strftime("%Y-%m-%d")
+    latest_bar_iso = str(latest_rec["date"])
+    latest_bar_dt = datetime.date.fromisoformat(latest_bar_iso)
+
+    snapped = False
+    snapped_note_fa = ""
+
+    if req_iso <= latest_bar_iso:
+        if req_iso in records_by_date:
+            eval_iso = req_iso
+        else:
+            eval_iso = min(
+                sorted_dates,
+                key=lambda d: (abs((datetime.date.fromisoformat(d) - req_dt).days), 0 if d >= req_iso else 1),
+            )
+            snapped = True
+            snapped_note_fa = f"تاریخ {req_iso} تعطیل بازار بود؛ نزدیک‌ترین سشن معاملاتی ({eval_iso}) بارگذاری شد."
+
+        rec = records_by_date[eval_iso]
+        is_live = eval_iso == latest_bar_iso
+        spot_ref = (
+            live_spot
+            if (is_live and live_spot is not None)
+            else float(rec.get("_target_close", rec["today_open"]))
+        )
+        card = build_live_signal_card(
+            latest_rec=rec,
+            archive=archive_full,
+            frozen_cfg=frozen_cfg,
+            spot_override=spot_ref,
+        )
+        for tw in card["matchedTwins"]:
+            assert tw["date"] < eval_iso, f"Look-ahead violation in by-date: {tw['date']} >= {eval_iso}"
+
+        idx = sorted_dates.index(eval_iso)
+        prev_date = sorted_dates[idx - 1] if idx > 0 else eval_iso
+        if idx + 1 < len(sorted_dates):
+            next_date = sorted_dates[idx + 1]
+        else:
+            nxt_dt = latest_bar_dt + datetime.timedelta(days=1)
+            while nxt_dt.weekday() >= 5:
+                nxt_dt += datetime.timedelta(days=1)
+            next_date = nxt_dt.strftime("%Y-%m-%d")
+
+        hrow = history_by_date.get(eval_iso, {})
+        act_move = float(hrow.get("actualMove", round(float(rec.get("_target_move", 0.0)), 2)))
+        act_dir = str(hrow.get("actualDir", rec.get("_target_dir", "FLAT")))
+        hit_out = str(hrow.get("outcomeBadge", "—"))
+        exec_pnl = float(hrow.get("execPnl", 0.0))
+        exec_win = bool(hrow.get("execWin", False))
+        raw_pnl = float(hrow.get("rawClosePnl", act_move if card["biasDirection"] == "XAU" else -act_move))
+        raw_win = bool(hrow.get("rawCloseWin", raw_pnl > 0))
+
+        session_type = "LIVE" if is_live else "HISTORICAL"
+        mode_badge_fa = "سشن زنده فعلی (Live Session)" if is_live else "بازبینی سشن تاریخی"
+
+        return {
+            "ok": True,
+            "service": "XAUUSD-FUSION-SIGNAL",
+            "version": "4.1.0",
+            "requestedDate": req_iso,
+            "snapped": snapped,
+            "snappedNoteFa": snapped_note_fa,
+            "sessionType": session_type,
+            "isHistorical": True,
+            "isFuture": False,
+            "isLiveSession": is_live,
+            "latestBarDate": latest_bar_iso,
+            "prevSessionDate": prev_date,
+            "nextSessionDate": next_date,
+            "modeBadgeFa": mode_badge_fa,
+            **card,
+            "actualMove": act_move,
+            "actualDir": act_dir,
+            "actualOpen": round(float(rec["today_open"]), 2),
+            "actualHigh": float(hrow.get("actualHigh", round(float(rec.get("_target_high", rec["today_open"])), 2))),
+            "actualLow": float(hrow.get("actualLow", round(float(rec.get("_target_low", rec["today_open"])), 2))),
+            "actualClose": float(hrow.get("actualClose", round(float(rec.get("_target_close", rec["today_open"])), 2))),
+            "hitOutcome": hit_out,
+            "outcomeCode": str(hrow.get("outcome", "")),
+            "execPnl": exec_pnl,
+            "execWin": exec_win,
+            "rawClosePnl": round(raw_pnl, 2),
+            "rawCloseWin": raw_win,
+            "hitTp1": bool(hrow.get("hitTp1", False)),
+            "hitTp2": bool(hrow.get("hitTp2", False)),
+            "hitTp3": bool(hrow.get("hitTp3", False)),
+            "hitSl": bool(hrow.get("hitSl", False)),
+        }
+
+    # Future Date Branch (`req_iso > latest_bar_iso`)
+    eval_dt = req_dt
+    if eval_dt.weekday() == 5:  # Saturday
+        fri_dt = eval_dt - datetime.timedelta(days=1)
+        eval_dt = fri_dt if fri_dt > latest_bar_dt else (eval_dt + datetime.timedelta(days=2))
+        snapped = True
+    elif eval_dt.weekday() == 6:  # Sunday
+        eval_dt = eval_dt + datetime.timedelta(days=1)
+        snapped = True
+
+    eval_iso = eval_dt.strftime("%Y-%m-%d")
+    if snapped:
+        snapped_note_fa = f"تاریخ {req_iso} آخر هفته بود؛ سشن معاملاتی آتی ({eval_iso}) بارگذاری شد."
+
+    fut_rec = _build_projected_session_rec(
+        latest_rec=latest_rec,
+        target_dt=eval_dt,
+        live_spot=live_spot,
+        split_tag="FUTURE_PROJECTION",
+    )
+    card = build_live_signal_card(
+        latest_rec=fut_rec,
+        archive=archive_full,
+        frozen_cfg=frozen_cfg,
+        spot_override=live_spot,
+    )
+    for tw in card["matchedTwins"]:
+        assert tw["date"] <= latest_bar_iso and tw["date"] < eval_iso
+
+    prv_dt = eval_dt - datetime.timedelta(days=1)
+    while prv_dt.weekday() >= 5:
+        prv_dt -= datetime.timedelta(days=1)
+    prev_date = latest_bar_iso if prv_dt <= latest_bar_dt else prv_dt.strftime("%Y-%m-%d")
+
+    nxt_dt = eval_dt + datetime.timedelta(days=1)
+    while nxt_dt.weekday() >= 5:
+        nxt_dt += datetime.timedelta(days=1)
+    next_date = nxt_dt.strftime("%Y-%m-%d")
+
+    return {
+        "ok": True,
+        "service": "XAUUSD-FUSION-SIGNAL",
+        "version": "4.1.0",
+        "requestedDate": req_iso,
+        "snapped": snapped,
+        "snappedNoteFa": snapped_note_fa,
+        "sessionType": "FUTURE",
+        "isHistorical": False,
+        "isFuture": True,
+        "isLiveSession": False,
+        "latestBarDate": latest_bar_iso,
+        "prevSessionDate": prev_date,
+        "nextSessionDate": next_date,
+        "modeBadgeFa": "پیشبینی تاریخ آتی",
+        "futureProjectionNoteFa": (
+            f"پیشبینی تاریخ آتی ({eval_iso}) — نقشه نجومی دوقطبی ۱۸:۰۰ نیویورک و امضای ۱۲ ستونی دقیق "
+            f"برای این تاریخ محاسبه شده و سطوح ۸×۸ بر پایه آخرین اسپات (${card['spotPrice']:,.2f}) لنگر شده‌اند."
+        ),
+        **card,
+        "actualMove": None,
+        "actualDir": None,
+        "hitOutcome": "پیشبینی تاریخ آتی",
+        "execPnl": None,
+        "execWin": None,
     }
 
 
@@ -979,8 +1177,8 @@ def run_full_pipeline() -> dict[str, Any]:
 
     summary_export = {
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.0.0",
-        "versionTag": "v4",
+        "version": "4.1.0",
+        "versionTag": "v4.1",
         "lastUpdatedUtc": now_iso,
         "locked_anchor": winner_run["anchor_key"],
         "locked_anchor_label": winner_run["anchor_label"],
@@ -1012,14 +1210,14 @@ def run_full_pipeline() -> dict[str, Any]:
     with open(os.path.join(DATA_DIR, "xauusd_predictions_2012_2026.json"), "w", encoding="utf-8") as f:
         json.dump(winner_run["rows"], f, ensure_ascii=False, indent=2)
 
-    # Export compact newest-first history shard for `/api/signals/history` (keeps web worker < 75 MiB RSS)
+    # Export compact newest-first history shard for `/api/signals/history` (keeps web worker < 85 MiB RSS)
     compact_history = [_build_compact_history_row(r) for r in reversed(winner_run["rows"])]
     with open(os.path.join(DATA_DIR, "xauusd_history_shard.json"), "w", encoding="utf-8") as f:
         json.dump(compact_history, f, ensure_ascii=False)
 
     shard_payload = {
         "service": "XAUUSD-FUSION-SIGNAL",
-        "version": "4.0.0",
+        "version": "4.1.0",
         "anchor": LOCKED_ANCHOR_KEY,
         "feedSource": "CACHED_VERIFIED_FEED",
         "lastUpdatedUtc": now_iso,
@@ -1029,12 +1227,14 @@ def run_full_pipeline() -> dict[str, Any]:
         "latest_session": live_card,
         "next_session_preview": next_card,
     }
+    records_by_date = {r["date"]: r for r in records if r["date"] >= "2012-01-01"}
     with open(os.path.join(DATA_DIR, "xauusd_twin_archive.pkl"), "wb") as pf:
         pickle.dump(
             {
                 "latest_rec": latest_rec,
                 "archive_before_latest": winner_run["archive_before_latest"],
                 "archive_full": winner_run["archive_full"],
+                "records_by_date": records_by_date,
             },
             pf,
         )

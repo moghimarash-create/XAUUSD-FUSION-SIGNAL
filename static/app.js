@@ -4,7 +4,7 @@
   const ELEM_META = {
     FIRE: { fa: "آتش", icon: "🔥", code: "FIRE" },
     AIR: { fa: "هوا", icon: "💨", code: "AIR" },
-    WATER: { fa: "آب", icon: "💧", code: "WATER" },
+    WATER: { fa: "💧 آب".replace("💧 ", ""), icon: "💧", code: "WATER" },
     EARTH: { fa: "خاک", icon: "🌍", code: "EARTH" },
   };
 
@@ -27,7 +27,11 @@
   const state = {
     todayPayload: null,
     summaryPayload: null,
-    sessionMode: "live", // "live" | "next"
+    activeCard: null,
+    liveDate: "",
+    nextPreviewDate: "",
+    prevNavDate: "",
+    nextNavDate: "",
     twinsExpanded: true,
     ledgerTier: "ALL",
     ledgerSplit: "VAL_OOS",
@@ -56,7 +60,34 @@
     el.textContent = msg;
     el.classList.remove("hidden");
     window.clearTimeout(el._timer);
-    el._timer = window.setTimeout(() => el.classList.add("hidden"), 4500);
+    el._timer = window.setTimeout(() => el.classList.add("hidden"), 4800);
+  }
+
+  function syncHeaderSelectionUI(card) {
+    if (!card) return;
+    const curDate = card.sessionDate || "";
+    const picker = $("session-date-picker");
+    if (picker && curDate) {
+      picker.value = curDate;
+    }
+
+    state.prevNavDate = card.prevSessionDate || "";
+    state.nextNavDate = card.nextSessionDate || "";
+
+    const tabLive = $("tab-live-session");
+    const tabNext = $("tab-next-session");
+    const isLive = curDate === state.liveDate && !card.isFuture;
+    const isNextPreview = curDate === state.nextPreviewDate && Boolean(card.isFuture);
+
+    tabLive.classList.toggle("active", isLive);
+    tabLive.setAttribute("aria-selected", String(isLive));
+    tabNext.classList.toggle("active", isNextPreview);
+    tabNext.setAttribute("aria-selected", String(isNextPreview));
+
+    // Highlight matching row in History Ledger if visible
+    document.querySelectorAll("#tbody-history-ledger tr.clickable-ledger-row").forEach((tr) => {
+      tr.classList.toggle("selected-ledger-row", tr.dataset.date === curDate);
+    });
   }
 
   function renderBenchmarkStrip(summary) {
@@ -100,15 +131,78 @@
       : "⚠ بررسی امضای ۱۲ ستونی";
   }
 
-  function renderHeroAndCard(card, isPreview) {
+  function renderOutcomeOrFutureBanner(card) {
+    const banner = $("hero-outcome-banner");
+    if (!banner || !card) return;
+
+    banner.className = "hero-outcome-banner";
+    if (card.isFuture) {
+      banner.classList.add("future-banner");
+      const note =
+        card.futureProjectionNoteFa ||
+        `پیشبینی تاریخ آتی (${card.sessionDate}) — نقشه نجومی دوقطبی ۱۸:۰۰ نیویورک و همزادهای ۱۲ ستونی دقیق برای این تاریخ محاسبه شده‌اند.`;
+      banner.innerHTML = `
+        <div class="outcome-banner-main">
+          <strong>🔮 پیشبینی تاریخ آتی</strong>
+          <span>${note}</span>
+        </div>
+      `;
+      return;
+    }
+
+    if (card.isHistorical && card.hitOutcome) {
+      const isActionable = Boolean(card.isA);
+      const isWin = Boolean(card.execWin);
+      banner.classList.add(!isActionable ? "hold-banner" : isWin ? "win-banner" : "loss-banner");
+      const chipCls = !isActionable ? "hold" : isWin ? "win" : "loss";
+      const execPnlStr = isActionable && card.execPnl !== null && card.execPnl !== undefined
+        ? fmtSignedUsd(card.execPnl)
+        : "بدون ورود (0.00$)";
+      const moveStr = card.actualMove !== null && card.actualMove !== undefined
+        ? `${fmtSignedUsd(card.actualMove)} (${card.actualDir || "FLAT"})`
+        : "—";
+      const rangeStr =
+        card.actualHigh !== undefined && card.actualLow !== undefined
+          ? `High ${fmtUsd(card.actualHigh)} / Low ${fmtUsd(card.actualLow)} / Close ${fmtUsd(card.actualClose)}`
+          : "";
+
+      banner.innerHTML = `
+        <div class="outcome-banner-main">
+          <strong>نتیجه واقعی کندل (${card.sessionDate}):</strong>
+          <span class="outcome-chip ${chipCls}">${card.hitOutcome}</span>
+          <span>سود-زیان اجرایی: <strong class="ltr-num ${!isActionable ? "" : isWin ? "pos-res" : "neg-res"}">${execPnlStr}</strong></span>
+        </div>
+        <div class="outcome-banner-details">
+          <span>حرکت واقعی بازار: <strong class="ltr-num">${moveStr}</strong></span>
+          ${rangeStr ? `<span class="ltr-num">${rangeStr}</span>` : ""}
+        </div>
+      `;
+      return;
+    }
+
+    banner.classList.add("hidden");
+  }
+
+  function renderHeroAndCard(card) {
     if (!card) return;
 
-    $("hero-session-mode-badge").textContent = isPreview
-      ? "پیش‌نمایش سشن آتی (Rollover Preview)"
-      : "سشن زنده فعلی (Live Session)";
+    const modeBadge = $("hero-session-mode-badge");
+    modeBadge.className = "meta-badge";
+    if (card.isFuture) {
+      modeBadge.classList.add("future-mode");
+      modeBadge.textContent = card.modeBadgeFa || "پیشبینی تاریخ آتی";
+    } else if (card.isLiveSession) {
+      modeBadge.textContent = "سشن زنده فعلی (Live Session)";
+    } else {
+      modeBadge.classList.add("hist-mode");
+      modeBadge.textContent = card.modeBadgeFa || "بازبینی سشن تاریخی";
+    }
+
     const wdFa = WEEKDAY_FA[card.weekday] || card.weekday;
     $("hero-session-date").textContent = `${card.sessionDate} • ${wdFa} (${card.weekday})`;
     $("hero-candle-utc").textContent = `T₀ UTC: ${card.candleOpenUtc}`;
+
+    renderOutcomeOrFutureBanner(card);
 
     const dir = card.direction || "HOLD / VETO";
     const bias = card.biasDirection || "XAU";
@@ -216,7 +310,6 @@
     $("home-res-pill").textContent = `Resonance: ${Number(hm.resonanceNorm ?? 0) >= 0 ? "+" : ""}${Number(hm.resonanceNorm ?? 0).toFixed(3)}`;
     $("away-res-pill").textContent = `Resonance: ${Number(am.resonanceNorm ?? 0) >= 0 ? "+" : ""}${Number(am.resonanceNorm ?? 0).toFixed(3)}`;
 
-    // 4-Element Dominance Comparison Bars
     const elemKeys = ["FIRE", "AIR", "WATER", "EARTH"];
     const hw = hm.wFawe || [1, 1, 1, 1];
     const aw = am.wFawe || [1, 1, 1, 1];
@@ -251,7 +344,7 @@
           const uRes = Number(p.unit_resonance || 0);
           const resCls = uRes >= 0 ? "pos-res" : "neg-res";
           const resTxt = `${uRes >= 0 ? "+" : ""}${uRes.toFixed(3)}`;
-          const aspects = (p.aspect_hits && p.aspect_hits.length > 0) ? p.aspect_hits.join(" • ") : "—";
+          const aspects = p.aspect_hits && p.aspect_hits.length > 0 ? p.aspect_hits.join(" • ") : "—";
           return `
             <tr class="${p.starter ? "starter-row" : "bench-row"}">
               <td><span class="pos-badge ${p.starter ? "starter" : ""}">${p.pos}</span></td>
@@ -284,7 +377,6 @@
     const lockCols = new Set(tc.lock3Cols || []);
     const elemOrder = ["FIRE", "AIR", "WATER", "EARTH"];
 
-    // Header Lock Badges
     const badges = [];
     if (tc.lock3Peak) {
       badges.push(`<span class="tw-badge gold">🔒 LOCK3_PEAK فعال (${(tc.lock3Cols || []).join(", ")})</span>`);
@@ -304,7 +396,6 @@
 
     $("sig-zero-elep").textContent = `zeroElepCnt: ${sig.zeroElepCnt ?? 0}`;
 
-    // 12-Col Matrix (Rows: PRIM, FINAL, ELE-P; Cols: FIRE, AIR, WATER, EARTH)
     const prim = sig.PRIM_FAWE || [0, 0, 0, 0];
     const fin = sig.FINAL_FAWE || [0, 0, 0, 0];
     const elep = sig.ELEP_FAWE || [0, 0, 0, 0];
@@ -328,7 +419,6 @@
     addMatrixRow("ELE-P (1..4)", elep);
     $("matrix-12col").innerHTML = matHtml;
 
-    // Geomancy Dots (1 = single active point •, 0 = passive pair • •)
     const geoCode = String(sig.geoCode || "0000");
     $("geo-fig-dots").innerHTML = geoCode
       .split("")
@@ -345,7 +435,6 @@
       .map((t) => `<span class="mini-chip">${t}</span>`)
       .join("");
 
-    // Twin Votes & Dominance
     const upN = Number(tc.upTwins || 0);
     const dnN = Number(tc.downTwins || 0);
     const totN = Math.max(1, upN + dnN);
@@ -366,7 +455,6 @@
     $("tw-gauss-score").textContent = `${Number(tc.gaussScore || 0) >= 0 ? "+" : ""}${Number(tc.gaussScore || 0).toFixed(4)}`;
     $("tw-count-inline").textContent = String(twins.length);
 
-    // Matched Historical Twins Table
     $("tbody-matched-twins").innerHTML = twins
       .map((tw, i) => {
         const isUp = tw.direction === "XAU";
@@ -391,6 +479,45 @@
       .join("");
   }
 
+  function applyFullSessionCard(card) {
+    if (!card) return;
+    state.activeCard = card;
+    if (card.rssMb) {
+      $("hdr-rss").textContent = `RSS: ${Number(card.rssMb).toFixed(1)} MiB`;
+    }
+    renderHeroAndCard(card);
+    renderRosters(card);
+    renderTwinsExplorer(card);
+    syncHeaderSelectionUI(card);
+  }
+
+  async function loadSessionByDate(targetDate, opts = {}) {
+    if (!targetDate) return;
+    try {
+      const res = await fetch(`/api/signals/by-date?date=${encodeURIComponent(targetDate)}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast(`⚠ خطا در بارگذاری تاریخ: ${err.detail || res.status}`);
+        return;
+      }
+      const data = await res.json();
+      applyFullSessionCard(data);
+
+      if (data.snapped && data.snappedNoteFa) {
+        showToast(`ℹ ${data.snappedNoteFa}`);
+      }
+      if (opts.scrollToHero) {
+        const heroEl = $("section-hero-signal");
+        if (heroEl) {
+          heroEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    } catch (err) {
+      console.error("loadSessionByDate error:", err);
+      showToast("⚠ خطا در ارتباط با سرور هنگام دریافت اطلاعات تاریخ.");
+    }
+  }
+
   async function loadHistoryLedger() {
     const params = new URLSearchParams({
       limit: "150",
@@ -413,21 +540,25 @@
     $("lkpi-exp").textContent = fmtSignedUsd(kpi.expectancyUsd ?? 0);
     $("lkpi-tps").textContent = `${Number(kpi.tp1HitRatePct ?? 0).toFixed(0)}% / ${Number(kpi.tp2HitRatePct ?? 0).toFixed(0)}% / ${Number(kpi.tp3HitRatePct ?? 0).toFixed(0)}%`;
 
+    const curActiveDate = state.activeCard ? state.activeCard.sessionDate : "";
+
     $("tbody-history-ledger").innerHTML = (data.items || [])
       .map((r) => {
         const wdFa = WEEKDAY_FA[r.weekday] || r.weekday;
         const badgeCls = !r.isA ? "hold" : r.execWin ? "win" : "loss";
         const pnlCls = !r.isA ? "" : Number(r.execPnl) >= 0 ? "pos-res" : "neg-res";
         const pnlTxt = !r.isA ? "—" : fmtSignedUsd(r.execPnl);
-        const sigTxt = r.direction === "LONG XAU"
-          ? `<span class="pos-res ltr-num">▲ LONG XAU</span>`
-          : r.direction === "SHORT XAU"
-          ? `<span class="neg-res ltr-num">▼ SHORT XAU</span>`
-          : `<span class="ltr-num">🛡️ HOLD (${r.biasDirection})</span>`;
+        const sigTxt =
+          r.direction === "LONG XAU"
+            ? `<span class="pos-res ltr-num">▲ LONG XAU</span>`
+            : r.direction === "SHORT XAU"
+            ? `<span class="neg-res ltr-num">▼ SHORT XAU</span>`
+            : `<span class="ltr-num">🛡️ HOLD (${r.biasDirection})</span>`;
+        const selCls = r.date === curActiveDate ? "selected-ledger-row" : "";
 
         return `
-          <tr>
-            <td><strong class="ltr-num">${r.date}</strong></td>
+          <tr class="clickable-ledger-row ${selCls}" data-date="${r.date}" title="کلیک برای بارگذاری کامل رادار تاریخ ${r.date}">
+            <td><strong class="ltr-num">🔍 ${r.date}</strong></td>
             <td>${wdFa}</td>
             <td><span class="ltr-num">${r.split}</span></td>
             <td><span class="ltr-num">${r.macroRegime}</span></td>
@@ -443,15 +574,6 @@
         `;
       })
       .join("");
-  }
-
-  function renderCurrentSessionMode() {
-    if (!state.todayPayload) return;
-    const isNext = state.sessionMode === "next";
-    const card = isNext ? state.todayPayload.nextSessionPreview : state.todayPayload.liveSession;
-    renderHeroAndCard(card, isNext);
-    renderRosters(card);
-    renderTwinsExplorer(card);
   }
 
   async function initialBoot() {
@@ -476,10 +598,9 @@
 
       if (todayRes.ok) {
         state.todayPayload = await todayRes.json();
-        if (state.todayPayload.rssMb) {
-          $("hdr-rss").textContent = `RSS: ${Number(state.todayPayload.rssMb).toFixed(1)} MiB`;
-        }
-        renderCurrentSessionMode();
+        state.liveDate = state.todayPayload.liveSession?.sessionDate || state.todayPayload.sessionDate || "";
+        state.nextPreviewDate = state.todayPayload.nextSessionPreview?.sessionDate || "";
+        applyFullSessionCard(state.todayPayload.liveSession || state.todayPayload);
       }
 
       await loadHistoryLedger();
@@ -489,18 +610,48 @@
   }
 
   function bindEvents() {
-    // Session Tabs (Live vs Next Rollover Preview)
-    document.querySelectorAll(".session-tab").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".session-tab").forEach((b) => {
-          b.classList.remove("active");
-          b.setAttribute("aria-selected", "false");
-        });
-        btn.classList.add("active");
-        btn.setAttribute("aria-selected", "true");
-        state.sessionMode = btn.dataset.mode || "live";
-        renderCurrentSessionMode();
-      });
+    // Quick Tabs: Live Session vs Next Rollover Preview
+    $("tab-live-session").addEventListener("click", () => {
+      if (state.todayPayload && state.todayPayload.liveSession) {
+        applyFullSessionCard(state.todayPayload.liveSession);
+      } else if (state.liveDate) {
+        loadSessionByDate(state.liveDate);
+      }
+    });
+
+    $("tab-next-session").addEventListener("click", () => {
+      if (state.todayPayload && state.todayPayload.nextSessionPreview) {
+        applyFullSessionCard(state.todayPayload.nextSessionPreview);
+      } else if (state.nextPreviewDate) {
+        loadSessionByDate(state.nextPreviewDate);
+      }
+    });
+
+    // Date Picker Input + Prev/Next Session Buttons
+    $("session-date-picker").addEventListener("change", (e) => {
+      const val = e.target.value;
+      if (val) {
+        loadSessionByDate(val);
+      }
+    });
+
+    $("btn-prev-session").addEventListener("click", () => {
+      if (state.prevNavDate) {
+        loadSessionByDate(state.prevNavDate);
+      }
+    });
+
+    $("btn-next-session").addEventListener("click", () => {
+      if (state.nextNavDate) {
+        loadSessionByDate(state.nextNavDate);
+      }
+    });
+
+    // Delegated click handler on History Ledger rows
+    $("tbody-history-ledger").addEventListener("click", (e) => {
+      const row = e.target.closest("tr.clickable-ledger-row");
+      if (!row || !row.dataset.date) return;
+      loadSessionByDate(row.dataset.date, { scrollToHero: true });
     });
 
     // Live Refresh Button
@@ -513,10 +664,14 @@
         if (res.ok) {
           const fresh = await res.json();
           state.todayPayload = fresh;
+          state.liveDate = fresh.liveSession?.sessionDate || fresh.sessionDate || state.liveDate;
+          state.nextPreviewDate = fresh.nextSessionPreview?.sessionDate || state.nextPreviewDate;
           $("hdr-rss").textContent = `RSS: ${Number(fresh.rssMb).toFixed(1)} MiB`;
           $("hdr-updated").textContent = `UTC: ${fresh.lastUpdatedUtc}`;
-          renderCurrentSessionMode();
-          showToast(`✓ بروزرسانی زنده انجام شد (${fresh.feedSource} • Spot ${fmtUsd(fresh.spotPrice)} • RSS ${fresh.rssMb} MiB)`);
+          applyFullSessionCard(fresh.liveSession || fresh);
+          showToast(
+            `✓ بروزرسانی زنده انجام شد (${fresh.feedSource} • Spot ${fmtUsd(fresh.spotPrice)} • RSS ${fresh.rssMb} MiB)`
+          );
         }
       } catch (err) {
         console.error("Refresh failed:", err);
