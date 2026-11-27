@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.cache/
+.gemini/
+.local/
+.android/
+.gradle/
+node_modules/
+*.log
+data/xauusd_predictions_2012_2026.json
